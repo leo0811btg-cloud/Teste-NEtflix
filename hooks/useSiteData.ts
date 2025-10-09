@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { SiteData, HeroData, StoryItem, Person, EventDetails, GalleryImage, Gift, PixConfig, RsvpResponse } from '../types';
 
 // Função de Debounce para evitar múltiplas chamadas de API em sequência
@@ -18,9 +18,6 @@ export const useSiteData = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Ref para evitar o salvamento inicial na primeira carga de dados
-    const isInitialLoad = useRef(true);
-
     const fetchData = useCallback(async (isRetry = false) => {
         setIsLoading(true);
         try {
@@ -31,7 +28,6 @@ export const useSiteData = () => {
             }
             const fetchedData = await response.json();
             setData(fetchedData);
-            isInitialLoad.current = true; // Reseta o flag a cada busca bem-sucedida
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Ocorreu um erro desconhecido.';
             setError(errorMessage);
@@ -50,11 +46,14 @@ export const useSiteData = () => {
 
     const saveData = useCallback(async (newData: SiteData) => {
         try {
-            await fetch('/api/site-data', {
+            const response = await fetch('/api/site-data', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newData),
             });
+            if (!response.ok) {
+                throw new Error('Falha ao salvar os dados na API.');
+            }
         } catch (err) {
             console.error("Falha ao salvar os dados", err);
             setError("Não foi possível salvar as alterações. Verifique sua conexão.");
@@ -62,21 +61,18 @@ export const useSiteData = () => {
     }, []);
 
     const debouncedSave = useCallback(debounce(saveData, 1500), [saveData]);
-
-    // Efeito para salvar dados quando eles mudam
-    useEffect(() => {
-        if (!data || isInitialLoad.current) {
-            if (data) {
-                isInitialLoad.current = false;
-            }
-            return;
-        }
-        debouncedSave(data);
-    }, [data, debouncedSave]);
     
-    // Setter genérico para atualizar qualquer parte dos dados do site
+    // Setter genérico que atualiza o estado local e dispara o salvamento
     const updateData = <K extends keyof SiteData>(key: K, value: SiteData[K]) => {
-        setData(prev => (prev ? { ...prev, [key]: value } : null));
+        setData(prevData => {
+            if (!prevData) return null;
+            
+            const newData = { ...prevData, [key]: value };
+            // Aciona o salvamento com o novo estado de dados
+            debouncedSave(newData);
+            
+            return newData;
+        });
     };
 
     const emptyHero: HeroData = { coupleNames: 'Carregando...', subtitle: '', imageUrl: '' };

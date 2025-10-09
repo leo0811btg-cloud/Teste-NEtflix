@@ -1,4 +1,3 @@
-
 // Importa os tipos necessários para as Funções da Vercel
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenAI } from "@google/genai";
@@ -20,7 +19,7 @@ export default async function handler(
   // Apenas permite requisições do tipo POST
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
-    return res.status(405).end('Method Not Allowed');
+    return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
   try {

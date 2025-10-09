@@ -41,5 +41,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Lida com outros métodos HTTP não permitidos
   res.setHeader('Allow', ['GET', 'POST']);
-  return res.status(405).end(`Método ${req.method} não permitido.`);
+  return res.status(405).json({ error: `Método ${req.method} não permitido.` });
 }
