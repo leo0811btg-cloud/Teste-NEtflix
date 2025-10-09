@@ -1,6 +1,67 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { kv } from '@vercel/kv';
-import type { SiteData } from '../types';
+
+// Type definitions moved directly into the API route to ensure it's self-contained.
+// This prevents build issues on Vercel where functions can't find external files.
+export interface Person {
+  id: number;
+  name: string;
+  role: string;
+  imageUrl: string;
+}
+export interface StoryItem {
+  id: number;
+  title: string;
+  description: string;
+  imageUrl: string;
+}
+export interface EventDetails {
+  id: number;
+  title: string;
+  date: string;
+  time: string;
+  location: string;
+  address: string;
+  dressCode: string;
+  icon: 'ceremony' | 'party';
+}
+export interface GalleryImage {
+  id: number;
+  src: string;
+  alt: string;
+}
+export interface HeroData {
+  coupleNames: string;
+  subtitle: string;
+  imageUrl: string;
+}
+export interface Gift {
+  id: number;
+  name: string;
+  price: number;
+  imageUrl: string;
+}
+export interface PixConfig {
+  key: string;
+  recipientName: string;
+  city: string;
+}
+export interface RsvpResponse {
+  id: number;
+  name: string;
+  attendance: 'yes' | 'no';
+}
+export interface SiteData {
+    heroData: HeroData;
+    ourStory: StoryItem[];
+    weddingParty: Person[];
+    eventDetails: EventDetails[];
+    galleryImages: GalleryImage[];
+    giftList: Gift[];
+    pixConfig: PixConfig;
+    rsvpResponses: RsvpResponse[];
+}
+
 
 // Moved DEFAULT_SITE_DATA directly into the API route to avoid importing a .tsx file in a Node.js environment.
 const DEFAULT_SITE_DATA: SiteData = {

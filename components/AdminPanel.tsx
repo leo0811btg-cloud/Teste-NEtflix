@@ -91,11 +91,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
             price: 0,
             imageUrl: 'https://placehold.co/400x300/27272a/e5e5e5?text=Imagem',
         };
-        setGiftList(prev => [...prev, newGift]);
+        // FIX: The setter from useSiteData does not support functional updates. Pass the new value directly.
+        setGiftList([...giftList, newGift]);
     };
 
     const handleRemoveGift = (id: number) => {
-        setGiftList(prev => prev.filter(gift => gift.id !== id));
+        // FIX: The setter from useSiteData does not support functional updates. Pass the new value directly.
+        setGiftList(giftList.filter(gift => gift.id !== id));
     };
 
     const handlePixConfigChange = (field: keyof PixConfig, value: string) => {

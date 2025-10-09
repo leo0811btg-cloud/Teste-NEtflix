@@ -18,13 +18,21 @@ export const useSiteData = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchData = useCallback(async (isRetry = false) => {
+    const fetchData = useCallback(async () => {
         setIsLoading(true);
+        setError(null);
         try {
             const response = await fetch('/api/site-data');
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Falha ao buscar os dados do site.');
+                let errorMessage = `Erro na API: ${response.status}`;
+                try {
+                    // Tenta extrair uma mensagem de erro mais específica do corpo da resposta
+                    const errorData = await response.json();
+                    errorMessage = errorData.error || errorData.details || errorMessage;
+                } catch (e) {
+                    console.warn("A resposta de erro da API não era JSON.");
+                }
+                throw new Error(errorMessage);
             }
             const fetchedData = await response.json();
             setData(fetchedData);
@@ -32,9 +40,6 @@ export const useSiteData = () => {
             const errorMessage = err instanceof Error ? err.message : 'Ocorreu um erro desconhecido.';
             setError(errorMessage);
             console.error(err);
-             if (!isRetry) {
-                setTimeout(() => fetchData(true), 3000); // Tenta buscar novamente após 3s
-            }
         } finally {
             setIsLoading(false);
         }
