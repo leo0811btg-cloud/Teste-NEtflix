@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
@@ -19,7 +18,7 @@ const App: React.FC = () => {
   const siteData = useSiteData();
   const { 
     heroData, ourStory, weddingParty, eventDetails, 
-    galleryImages, giftList, setRsvpResponses 
+    galleryImages, giftList, isLoading, error
   } = siteData;
 
   const [isRSVPOpen, setIsRSVPOpen] = useState(false);
@@ -32,6 +31,28 @@ const App: React.FC = () => {
     setIsLoginOpen(false);
     setIsAuthenticated(true);
   };
+
+  if (isLoading) {
+    return (
+        <div className="bg-zinc-900 text-white min-h-screen flex flex-col items-center justify-center">
+            <h1 className="text-5xl text-red-600 font-bebas tracking-wider mb-4 animate-pulse">OurFlix</h1>
+            <p>Carregando nossa história...</p>
+        </div>
+    );
+  }
+
+  if (error || !heroData) {
+     return (
+        <div className="bg-zinc-900 text-white min-h-screen flex flex-col items-center justify-center text-center p-4">
+            <h1 className="text-4xl text-red-600 font-bebas tracking-wider mb-4">Oops! Falha na Conexão</h1>
+            <p className="mb-4">Houve um problema ao carregar os dados do site.</p>
+            <p className="text-zinc-400 text-sm mb-6">{error}</p>
+            <button onClick={() => window.location.reload()} className="bg-red-600 text-white font-bold py-2 px-6 rounded hover:bg-red-700">
+                Tentar Novamente
+            </button>
+        </div>
+    );
+  }
 
   return (
     <div className="bg-zinc-900 text-white min-h-screen">
@@ -87,9 +108,9 @@ const App: React.FC = () => {
       {isRSVPOpen && (
         <RSVPModal 
           onClose={() => setIsRSVPOpen(false)} 
-          onConfirm={(response) => {
-            setRsvpResponses(prev => [...prev, response]);
-          }} 
+          onConfirmSuccess={() => {
+              siteData.fetchData(); // Busca os dados novamente para atualizar a lista de presença no painel ADM
+          }}
         />
       )}
       {isGalleryOpen && <GalleryModal images={galleryImages} onClose={() => setIsGalleryOpen(false)} />}

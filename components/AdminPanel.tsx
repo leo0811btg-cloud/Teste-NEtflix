@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import type { useSiteData } from '../hooks/useSiteData';
 import type { Gift, PixConfig } from '../types';
@@ -33,7 +32,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
     const [activeTab, setActiveTab] = useState<AdminTab>('content');
 
     const handleHeroChange = (field: keyof typeof heroData, value: string) => {
-        setHeroData(prev => ({ ...prev, [field]: value }));
+        setHeroData({ ...heroData, [field]: value });
     };
     
     const handleHeroImageChange = async (file: File | null) => {
@@ -107,7 +106,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
         if (field === 'city') {
             processedValue = processedValue.toUpperCase();
         }
-        setPixConfig(prev => ({ ...prev, [field]: processedValue }));
+        setPixConfig({ ...pixConfig, [field]: processedValue });
     };
     
     const rsvpCounts = useMemo(() => {
@@ -308,7 +307,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
               </fieldset>
             )}
 
-            <p className="text-center text-sm text-zinc-500 pt-4">As alterações são salvas automaticamente e persistem até que a página seja recarregada.</p>
+            <p className="text-center text-sm text-zinc-500 pt-4">As alterações são salvas automaticamente no banco de dados.</p>
         </div>
       </div>
     </div>

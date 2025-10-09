@@ -22,8 +22,7 @@ export interface EventDetails {
   location: string;
   address: string;
   dressCode: string;
-  // FIX: Changed JSX.Element to React.ReactElement to resolve namespace error.
-  icon: React.ReactElement;
+  icon: 'ceremony' | 'party'; // Alterado para ser serializável
 }
 
 export interface GalleryImage {
@@ -55,4 +54,16 @@ export interface RsvpResponse {
   id: number;
   name: string;
   attendance: 'yes' | 'no';
+}
+
+// Novo tipo para agrupar todos os dados do site
+export interface SiteData {
+    heroData: HeroData;
+    ourStory: StoryItem[];
+    weddingParty: Person[];
+    eventDetails: EventDetails[];
+    galleryImages: GalleryImage[];
+    giftList: Gift[];
+    pixConfig: PixConfig;
+    rsvpResponses: RsvpResponse[];
 }
