@@ -63,6 +63,14 @@ export interface SiteData {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (!process.env.KV_URL || !process.env.KV_REST_API_TOKEN) {
+    console.error("Missing Vercel KV environment variables.");
+    return res.status(500).json({ 
+      error: 'Configuração do Servidor Incompleta', 
+      details: 'As variáveis de ambiente para a conexão com o banco de dados não foram encontradas. Por favor, configure-as no painel da Vercel.' 
+    });
+  }
+
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Método não permitido' });

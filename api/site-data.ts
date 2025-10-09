@@ -115,6 +115,14 @@ const DEFAULT_SITE_DATA: SiteData = {
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (!process.env.KV_URL || !process.env.KV_REST_API_TOKEN) {
+    console.error("Missing Vercel KV environment variables.");
+    return res.status(500).json({ 
+      error: 'Configuração do Servidor Incompleta', 
+      details: 'As variáveis de ambiente para a conexão com o banco de dados não foram encontradas. Por favor, configure-as no painel da Vercel.' 
+    });
+  }
+  
   if (req.method === 'GET') {
     try {
       // Tenta buscar os dados do Vercel KV
