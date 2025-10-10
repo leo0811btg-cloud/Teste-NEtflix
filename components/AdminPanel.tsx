@@ -9,41 +9,6 @@ interface AdminPanelProps {
   onClose: () => void;
 }
 
-const MAX_FILE_SIZE_BYTES = 4 * 1024 * 1024; // 4 MB - Limite de segurança para Vercel Hobby
-
-// Helper para upload de imagens para a API do Vercel Blob
-const uploadImage = async (file: File): Promise<string> => {
-    const response = await fetch(`/api/upload-image`, {
-        method: 'POST',
-        body: file,
-        headers: {
-            'Content-Type': file.type,
-            'x-vercel-filename': encodeURIComponent(file.name)
-        },
-    });
-
-    if (!response.ok) {
-        let errorMessage = 'Falha ao enviar imagem.';
-        try {
-            // Tenta interpretar a resposta como JSON, que é o esperado da nossa API
-            const errorData = await response.json();
-            errorMessage = errorData.details || errorData.error || errorMessage;
-        } catch (e) {
-            // Se falhar, é um erro da infraestrutura da Vercel (como limite de tamanho)
-            if (response.status === 413) {
-                 errorMessage = 'A imagem é muito grande. O limite máximo é de 4 MB.';
-            } else {
-                 errorMessage = `Erro do servidor (${response.status}). Tente novamente.`;
-            }
-        }
-        throw new Error(errorMessage);
-    }
-
-    const newBlob = await response.json();
-    return newBlob.url;
-};
-
-
 type AdminTab = 'content' | 'gifts' | 'rsvp';
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => {
@@ -56,46 +21,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
         rsvpResponses,
     } = siteData;
     const [activeTab, setActiveTab] = useState<AdminTab>('content');
-    const [uploadingId, setUploadingId] = useState<string | null>(null);
-    const [uploadError, setUploadError] = useState<string | null>(null);
-
-
-    const handleImageChange = async (
-        file: File | null,
-        id: string,
-        updateFunction: (url: string) => void
-    ) => {
-        if (!file) return;
-
-        // Limpa erros antigos e prepara para o novo upload
-        setUploadError(null);
-        setUploadingId(id);
-
-        // Validação do tamanho do arquivo ANTES de enviar
-        if (file.size > MAX_FILE_SIZE_BYTES) {
-            setUploadError(`A imagem é muito grande (${(file.size / 1024 / 1024).toFixed(1)} MB). O tamanho máximo é de 4 MB.`);
-            setUploadingId(null);
-            return;
-        }
-
-        try {
-            const newUrl = await uploadImage(file);
-            updateFunction(newUrl);
-        } catch (error) {
-            console.error(error);
-            setUploadError(error instanceof Error ? error.message : 'Erro desconhecido');
-        } finally {
-            setUploadingId(null);
-        }
-    };
-
 
     const handleHeroChange = (field: keyof typeof heroData, value: string) => {
         setHeroData({ ...heroData, [field]: value });
-    };
-    
-    const handleHeroImageChange = (file: File | null) => {
-        handleImageChange(file, 'hero', (url) => handleHeroChange('imageUrl', url));
     };
 
     const handleStoryChange = (index: number, field: 'title' | 'description' | 'imageUrl', value: string) => {
@@ -104,33 +32,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
         setOurStory(newStory);
     };
     
-    const handleStoryImageChange = (index: number, file: File | null) => {
-        handleImageChange(file, `story-${index}`, (url) => handleStoryChange(index, 'imageUrl', url));
-    };
-    
     const handlePartyChange = (index: number, field: 'name' | 'role' | 'imageUrl', value: string) => {
         const newParty = [...weddingParty];
         newParty[index] = { ...newParty[index], [field]: value };
         setWeddingParty(newParty);
     };
 
-    const handlePartyImageChange = (index: number, file: File | null) => {
-        handleImageChange(file, `party-${index}`, (url) => handlePartyChange(index, 'imageUrl', url));
-    };
-
-    const handleGiftChange = (index: number, field: keyof Omit<Gift, 'id' | 'imageUrl'>, value: string | number) => {
+    const handleGiftChange = (index: number, field: keyof Omit<Gift, 'id'>, value: string | number) => {
         const newGiftList = [...giftList];
         const finalValue = field === 'price' ? Number(value) : value;
         newGiftList[index] = { ...newGiftList[index], [field]: finalValue };
         setGiftList(newGiftList);
     };
-
-    const handleGiftImageChange = (index: number, file: File | null) => {
-         const newGiftList = [...giftList];
-         handleImageChange(file, `gift-${index}`, (url) => {
-            newGiftList[index] = { ...newGiftList[index], imageUrl: url };
-            setGiftList(newGiftList);
-         });
+    
+    const handleGiftImageUrlChange = (index: number, url: string) => {
+        const newGiftList = [...giftList];
+        newGiftList[index] = { ...newGiftList[index], imageUrl: url };
+        setGiftList(newGiftList);
     };
 
     const handleAddGift = () => {
@@ -138,7 +56,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
             id: Date.now(),
             name: 'Novo Presente',
             price: 0,
-            imageUrl: 'https://placehold.co/400x300/27272a/e5e5e5?text=Imagem',
+            imageUrl: 'https://placehold.co/400x300/27272a/e5e5e5?text=Cole+a+URL',
         };
         setGiftList([...giftList, newGift]);
     };
@@ -185,12 +103,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
             <button onClick={() => setActiveTab('gifts')} className={`font-bebas text-xl py-2 px-4 ${activeTab === 'gifts' ? 'text-red-500 border-b-2 border-red-500' : 'text-zinc-400'}`}>Presentes & PIX</button>
             <button onClick={() => setActiveTab('rsvp')} className={`font-bebas text-xl py-2 px-4 ${activeTab === 'rsvp' ? 'text-red-500 border-b-2 border-red-500' : 'text-zinc-400'}`}>Confirmações</button>
         </div>
-
-        {uploadError && (
-            <div className="bg-red-800/50 text-red-200 p-3 rounded-lg mb-4 text-center">
-                <strong>Erro no Upload:</strong> {uploadError}
-            </div>
-        )}
         
         {/* Content based on active tab */}
         <div className="space-y-8">
@@ -209,11 +121,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
                             <input type="text" value={heroData.subtitle} onChange={e => handleHeroChange('subtitle', e.target.value)} className="w-full bg-zinc-800 rounded p-2" />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-zinc-400 mb-1">Imagem de Fundo</label>
-                            <img src={heroData.imageUrl} alt="Preview" className="w-48 h-auto object-cover rounded my-2"/>
-                            {uploadingId === 'hero' ? <p className="text-sm text-zinc-400">Enviando...</p> : 
-                                <input type="file" accept="image/*" onChange={e => handleHeroImageChange(e.target.files?.[0] || null)} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
-                            }
+                            <label className="block text-sm font-medium text-zinc-400 mb-1">URL da Imagem de Fundo</label>
+                            <img src={heroData.imageUrl} alt="Preview" className="w-48 h-auto object-cover rounded my-2 border border-zinc-700"/>
+                            <input type="text" value={heroData.imageUrl} onChange={e => handleHeroChange('imageUrl', e.target.value)} placeholder="https://exemplo.com/imagem.jpg" className="w-full bg-zinc-800 rounded p-2" />
                         </div>
                     </div>
                 </fieldset>
@@ -230,11 +140,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
                                 <label className="block text-sm font-medium text-zinc-400 mb-1">Descrição</label>
                                 <textarea value={item.description} onChange={e => handleStoryChange(index, 'description', e.target.value)} className="w-full bg-zinc-800 rounded p-2 h-24 mb-2" />
 
-                                <label className="block text-sm font-medium text-zinc-400 mb-1">Imagem</label>
-                                <img src={item.imageUrl} alt="Preview" className="w-40 h-auto object-cover rounded my-2"/>
-                                {uploadingId === `story-${index}` ? <p className="text-sm text-zinc-400">Enviando...</p> :
-                                <input type="file" accept="image/*" onChange={e => handleStoryImageChange(index, e.target.files?.[0] || null)} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
-                                }
+                                <label className="block text-sm font-medium text-zinc-400 mb-1">URL da Imagem</label>
+                                <img src={item.imageUrl} alt="Preview" className="w-40 h-auto object-cover rounded my-2 border border-zinc-700"/>
+                                <input type="text" value={item.imageUrl} onChange={e => handleStoryChange(index, 'imageUrl', e.target.value)} placeholder="https://exemplo.com/imagem.jpg" className="w-full bg-zinc-800 rounded p-2" />
                             </div>
                         ))}
                     </div>
@@ -252,11 +160,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
                                 <label className="block text-sm font-medium text-zinc-400 mb-1">Papel</label>
                                 <input type="text" value={person.role} onChange={e => handlePartyChange(index, 'role', e.target.value)} className="w-full bg-zinc-800 rounded p-2" />
 
-                                <label className="block text-sm font-medium text-zinc-400 mb-1">Foto</label>
-                                <img src={person.imageUrl} alt="Preview" className="w-24 h-auto object-cover rounded my-2"/>
-                                {uploadingId === `party-${index}` ? <p className="text-sm text-zinc-400">Enviando...</p> :
-                                <input type="file" accept="image/*" onChange={e => handlePartyImageChange(index, e.target.files?.[0] || null)} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
-                                }
+                                <label className="block text-sm font-medium text-zinc-400 mb-1">URL da Foto</label>
+                                <img src={person.imageUrl} alt="Preview" className="w-24 h-auto object-cover rounded my-2 border border-zinc-700"/>
+                                <input type="text" value={person.imageUrl} onChange={e => handlePartyChange(index, 'imageUrl', e.target.value)} placeholder="https://exemplo.com/imagem.jpg" className="w-full bg-zinc-800 rounded p-2" />
                             </div>
                         ))}
                     </div>
@@ -299,11 +205,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
                                     <input type="number" value={gift.price} onChange={e => handleGiftChange(index, 'price', e.target.value)} className="w-full bg-zinc-800 rounded p-2" />
                             </div>
                             <div>
-                                    <label className="block text-sm font-medium text-zinc-400 mb-1">Imagem</label>
-                                    <img src={gift.imageUrl} alt="Preview" className="w-32 h-auto object-cover rounded my-2"/>
-                                    {uploadingId === `gift-${index}` ? <p className="text-sm text-zinc-400">Enviando...</p> :
-                                        <input type="file" accept="image/*" onChange={e => handleGiftImageChange(index, e.target.files?.[0] || null)} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
-                                    }
+                                    <label className="block text-sm font-medium text-zinc-400 mb-1">URL da Imagem</label>
+                                    <img src={gift.imageUrl} alt="Preview" className="w-32 h-auto object-cover rounded my-2 border border-zinc-700"/>
+                                    <input type="text" value={gift.imageUrl} onChange={e => handleGiftImageUrlChange(index, e.target.value)} placeholder="https://exemplo.com/imagem.jpg" className="w-full bg-zinc-800 rounded p-2" />
                                     <button onClick={() => handleRemoveGift(gift.id)} className="mt-4 w-full bg-red-800/50 text-red-200 text-sm font-bold py-2 px-4 rounded hover:bg-red-800/80 transition-colors">
                                         Remover Presente
                                     </button>
