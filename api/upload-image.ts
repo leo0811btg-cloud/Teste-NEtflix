@@ -22,17 +22,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  const filenameHeader = req.headers['x-vercel-filename'] as string;
-  
-  if (!filenameHeader) {
-    return res.status(400).json({ error: 'Nome do arquivo (cabeçalho x-vercel-filename) é obrigatório.' });
+  const filename = req.query.filename as string;
+  if (!filename || !req.body) {
+    return res.status(400).json({ error: 'Nome do arquivo e corpo da requisição são obrigatórios.' });
   }
-
-  if (!req.body) {
-    return res.status(400).json({ error: 'Corpo da requisição está vazio.' });
-  }
-  
-  const filename = decodeURIComponent(filenameHeader);
 
   try {
     // Faz o upload do arquivo (req.body é um stream) para o Vercel Blob.

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Countdown } from './Countdown';
 import { WEDDING_DATE } from '../constants';
@@ -16,6 +15,7 @@ export const Hero: React.FC<HeroProps> = ({ heroData }) => {
           src={heroData.imageUrl} 
           alt="Maria e João" 
           className="w-full h-full object-cover opacity-50" 
+          style={{ objectPosition: heroData.imagePosition || 'center' }}
         />
       </div>
       <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-transparent to-black"></div>

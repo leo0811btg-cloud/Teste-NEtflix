@@ -5,6 +5,7 @@ export interface Person {
   name: string;
   role: string;
   imageUrl: string;
+  imagePosition?: string;
 }
 
 export interface StoryItem {
@@ -12,6 +13,7 @@ export interface StoryItem {
   title: string;
   description: string;
   imageUrl: string;
+  imagePosition?: string;
 }
 
 export interface EventDetails {
@@ -43,6 +45,7 @@ export interface Gift {
   name: string;
   price: number;
   imageUrl: string;
+  imagePosition?: string;
 }
 
 export interface PixConfig {

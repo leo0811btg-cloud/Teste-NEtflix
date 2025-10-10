@@ -10,7 +10,12 @@ export const GiftCard: React.FC<GiftCardProps> = ({ gift, onGiftClick }) => {
   return (
     <div className="flex-shrink-0 w-60 md:w-64 mr-4 group">
       <div className="relative overflow-hidden rounded-md bg-zinc-800 transition-transform duration-300 transform group-hover:scale-105 shadow-lg">
-        <img src={gift.imageUrl} alt={gift.name} className="w-full h-40 object-cover" />
+        <img 
+          src={gift.imageUrl} 
+          alt={gift.name} 
+          className="w-full h-40 object-cover" 
+          style={{ objectPosition: gift.imagePosition || 'center' }}
+        />
         <div className="p-4 text-white">
           <h4 className="font-bold text-base truncate">{gift.name}</h4>
           <p className="text-sm text-zinc-400 mt-1">

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import type { useSiteData } from '../hooks/useSiteData';
-import type { Gift, PixConfig, HeroData } from '../types';
+import type { Gift, PixConfig, HeroData, StoryItem, Person } from '../types';
 
 type SiteData = ReturnType<typeof useSiteData>;
 
@@ -71,7 +71,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
         handleImageChange(file, 'hero', (url) => handleHeroChange('imageUrl', url));
     };
 
-    const handleStoryChange = (index: number, field: 'title' | 'description' | 'imageUrl', value: string) => {
+    const handleStoryChange = (index: number, field: keyof StoryItem, value: string) => {
         const newStory = [...ourStory];
         newStory[index] = { ...newStory[index], [field]: value };
         setOurStory(newStory);
@@ -81,7 +81,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
         handleImageChange(file, `story-${index}`, (url) => handleStoryChange(index, 'imageUrl', url));
     };
     
-    const handlePartyChange = (index: number, field: 'name' | 'role' | 'imageUrl', value: string) => {
+    const handlePartyChange = (index: number, field: keyof Person, value: string) => {
         const newParty = [...weddingParty];
         newParty[index] = { ...newParty[index], [field]: value };
         setWeddingParty(newParty);
@@ -112,6 +112,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
             name: 'Novo Presente',
             price: 0,
             imageUrl: 'https://placehold.co/400x300/27272a/e5e5e5?text=Imagem',
+            imagePosition: 'center',
         };
         setGiftList([...giftList, newGift]);
     };
@@ -242,9 +243,27 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
                                     <label className="block text-sm font-medium text-zinc-400 mb-1">Descrição</label>
                                     <textarea value={item.description} onChange={e => handleStoryChange(index, 'description', e.target.value)} className="w-full bg-zinc-800 rounded p-2 h-24" />
                                 </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-zinc-400 mb-1">Posição da Imagem</label>
+                                    <select
+                                        value={item.imagePosition || 'center'}
+                                        onChange={e => handleStoryChange(index, 'imagePosition', e.target.value)}
+                                        className="w-full bg-zinc-800 rounded p-2"
+                                    >
+                                        <option value="center">Centro</option>
+                                        <option value="top">Topo</option>
+                                        <option value="bottom">Baixo</option>
+                                        <option value="left">Esquerda</option>
+                                        <option value="right">Direita</option>
+                                        <option value="top left">Canto Superior Esquerdo</option>
+                                        <option value="top right">Canto Superior Direito</option>
+                                        <option value="bottom left">Canto Inferior Esquerdo</option>
+                                        <option value="bottom right">Canto Inferior Direito</option>
+                                    </select>
+                                </div>
                                 <div className="space-y-2">
                                     <label className="block text-sm font-medium text-zinc-400 mb-1">Imagem</label>
-                                    <img src={item.imageUrl} alt="Preview" className="w-40 h-auto object-cover rounded my-2"/>
+                                    <img src={item.imageUrl} alt="Preview" className="w-40 h-auto object-cover rounded my-2" style={{ objectPosition: item.imagePosition || 'center' }}/>
                                     <div className="bg-zinc-800 p-3 rounded-md space-y-2">
                                         <div>
                                             <label className="block text-xs font-medium text-zinc-400 mb-1">Enviar um arquivo:</label>
@@ -286,9 +305,27 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
                                     <label className="block text-sm font-medium text-zinc-400 mb-1">Papel</label>
                                     <input type="text" value={person.role} onChange={e => handlePartyChange(index, 'role', e.target.value)} className="w-full bg-zinc-800 rounded p-2" />
                                 </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-zinc-400 mb-1">Posição da Imagem</label>
+                                    <select
+                                        value={person.imagePosition || 'center'}
+                                        onChange={e => handlePartyChange(index, 'imagePosition', e.target.value)}
+                                        className="w-full bg-zinc-800 rounded p-2"
+                                    >
+                                        <option value="center">Centro</option>
+                                        <option value="top">Topo</option>
+                                        <option value="bottom">Baixo</option>
+                                        <option value="left">Esquerda</option>
+                                        <option value="right">Direita</option>
+                                        <option value="top left">Canto Superior Esquerdo</option>
+                                        <option value="top right">Canto Superior Direito</option>
+                                        <option value="bottom left">Canto Inferior Esquerdo</option>
+                                        <option value="bottom right">Canto Inferior Direito</option>
+                                    </select>
+                                </div>
                                 <div className="space-y-2 pt-2">
                                     <label className="block text-sm font-medium text-zinc-400 mb-1">Foto</label>
-                                    <img src={person.imageUrl} alt="Preview" className="w-24 h-auto object-cover rounded my-2"/>
+                                    <img src={person.imageUrl} alt="Preview" className="w-24 h-auto object-cover rounded my-2" style={{ objectPosition: person.imagePosition || 'center' }}/>
                                     <div className="bg-zinc-800 p-3 rounded-md space-y-2">
                                         <div>
                                             <label className="block text-xs font-medium text-zinc-400 mb-1">Enviar um arquivo:</label>
@@ -345,16 +382,33 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
                     <div className="space-y-6">
                         {giftList.map((gift, index) => (
                             <div key={gift.id} className="border-b border-zinc-800 pb-4 last:border-b-0 last:pb-0 grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                            <div>
+                            <div className="space-y-2">
                                     <label className="block text-sm font-medium text-zinc-400 mb-1">Nome do Presente</label>
-                                    <input type="text" value={gift.name} onChange={e => handleGiftChange(index, 'name', e.target.value)} className="w-full bg-zinc-800 rounded p-2 mb-2" />
+                                    <input type="text" value={gift.name} onChange={e => handleGiftChange(index, 'name', e.target.value)} className="w-full bg-zinc-800 rounded p-2" />
                                     
                                     <label className="block text-sm font-medium text-zinc-400 mb-1">Preço (R$)</label>
                                     <input type="number" value={gift.price} onChange={e => handleGiftChange(index, 'price', e.target.value)} className="w-full bg-zinc-800 rounded p-2" />
+                                    
+                                    <label className="block text-sm font-medium text-zinc-400 mb-1">Posição da Imagem</label>
+                                    <select
+                                        value={gift.imagePosition || 'center'}
+                                        onChange={e => handleGiftChange(index, 'imagePosition', e.target.value)}
+                                        className="w-full bg-zinc-800 rounded p-2"
+                                    >
+                                        <option value="center">Centro</option>
+                                        <option value="top">Topo</option>
+                                        <option value="bottom">Baixo</option>
+                                        <option value="left">Esquerda</option>
+                                        <option value="right">Direita</option>
+                                        <option value="top left">Canto Superior Esquerdo</option>
+                                        <option value="top right">Canto Superior Direito</option>
+                                        <option value="bottom left">Canto Inferior Esquerdo</option>
+                                        <option value="bottom right">Canto Inferior Direito</option>
+                                    </select>
                             </div>
                             <div className="space-y-2">
                                     <label className="block text-sm font-medium text-zinc-400 mb-1">Imagem</label>
-                                    <img src={gift.imageUrl} alt="Preview" className="w-32 h-auto object-cover rounded my-2"/>
+                                    <img src={gift.imageUrl} alt="Preview" className="w-32 h-auto object-cover rounded my-2" style={{ objectPosition: gift.imagePosition || 'center' }}/>
                                     <div className="bg-zinc-800 p-3 rounded-md space-y-2">
                                         <div>
                                             <label className="block text-xs font-medium text-zinc-400 mb-1">Enviar um arquivo:</label>

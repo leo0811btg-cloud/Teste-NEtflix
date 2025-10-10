@@ -52,7 +52,7 @@ const App: React.FC = () => {
             <>
                 <h2 className="font-bebas text-3xl text-red-500 mb-2">Quase lá! Faltam algumas configurações.</h2>
                 <p className="text-zinc-300 max-w-2xl mb-6">
-                    Para o site funcionar, precisamos conectar o banco de dados para salvar os textos e as URLs das imagens. É super rápido!
+                    Para o site funcionar, precisamos conectar o banco de dados (para textos) e o armazenamento de imagens. É super rápido!
                 </p>
                 <div className="bg-zinc-800 p-6 rounded-lg text-left max-w-3xl w-full border border-zinc-700">
                     <h3 className="font-bold text-lg mb-4 text-white">Como resolver:</h3>
@@ -61,13 +61,16 @@ const App: React.FC = () => {
                             No painel do seu projeto na <strong>Vercel</strong>, vá para a aba <strong>"Storage"</strong>.
                         </li>
                         <li>
-                            Na seção "Marketplace", clique em <strong>"Upstash"</strong> e depois selecione <strong>"Upstash for Redis"</strong> para criar o banco de dados. Conecte o plano gratuito (Hobby).
+                            <strong>Para os textos:</strong> Na seção "Marketplace", clique em <strong>"Upstash"</strong> e depois selecione <strong>"Upstash for Redis"</strong>. Conecte o plano gratuito (Hobby).
+                        </li>
+                        <li>
+                            <strong>Para as imagens:</strong> De volta à aba "Storage", encontre a opção <strong>"Blob (Fast object storage)"</strong> e conecte-a.
                         </li>
                         <li>
                             Agora, vá para <strong>"Settings"</strong> &gt; <strong>"Environment Variables"</strong>.
                         </li>
                         <li>
-                            Verifique se as variáveis do KV (<code>KV_URL</code>, etc) foram criadas, e se a variável <code>API_KEY</code> (com sua chave do Gemini) existe. Se não, crie-a.
+                            Verifique se as variáveis do KV (<code>KV_URL</code>, etc) e do Blob (<code>BLOB_READ_WRITE_TOKEN</code>) foram criadas, e se a variável <code>API_KEY</code> (com sua chave do Gemini) existe. Se não, crie-a.
                         </li>
                         <li>
                             <strong>Passo crucial:</strong> Para aplicar tudo, vá na aba <strong>"Deployments"</strong>, encontre o último deploy, clique no menu (...) e selecione <strong>"Redeploy"</strong>.
