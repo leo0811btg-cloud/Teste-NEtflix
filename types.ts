@@ -35,6 +35,7 @@ export interface HeroData {
   coupleNames: string;
   subtitle: string;
   imageUrl: string;
+  imagePosition?: string;
 }
 
 export interface Gift {
