@@ -3,10 +3,10 @@ import type { RsvpResponse } from '../types';
 
 interface RSVPModalProps {
   onClose: () => void;
-  onConfirmSuccess: () => void;
+  addRsvpResponse: (response: Omit<RsvpResponse, 'id'>) => Promise<void>;
 }
 
-export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onConfirmSuccess }) => {
+export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, addRsvpResponse }) => {
   const [name, setName] = useState('');
   const [attendance, setAttendance] = useState<'yes' | 'no' | ''>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -19,27 +19,12 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onConfirmSuccess 
     if (name && attendance) {
       setIsSubmitting(true);
       setError('');
+      
       try {
-        const newResponse: Omit<RsvpResponse, 'id'> = {
-          name,
-          attendance,
-        };
-
-        const apiResponse = await fetch('/api/rsvp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...newResponse, id: Date.now() }),
-        });
-
-        if (!apiResponse.ok) {
-            const errorData = await apiResponse.json();
-            throw new Error(errorData.error || 'Não foi possível enviar sua resposta. Tente novamente.');
-        }
-
+        await addRsvpResponse({ name, attendance });
         setSubmitted(true);
-        onConfirmSuccess();
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Ocorreu um erro desconhecido.');
+        setError(err instanceof Error ? err.message : 'Ocorreu um erro desconhecido. Por favor, tente novamente.');
       } finally {
         setIsSubmitting(false);
       }

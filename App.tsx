@@ -18,7 +18,8 @@ const App: React.FC = () => {
   const siteData = useSiteData();
   const { 
     heroData, ourStory, weddingParty, eventDetails, 
-    galleryImages, giftList, isLoading, error
+    galleryImages, giftList, pixConfig,
+    isLoading, error, addRsvpResponse
   } = siteData;
 
   const [isRSVPOpen, setIsRSVPOpen] = useState(false);
@@ -34,23 +35,23 @@ const App: React.FC = () => {
 
   if (isLoading) {
     return (
-        <div className="bg-zinc-900 text-white min-h-screen flex flex-col items-center justify-center">
-            <h1 className="text-5xl text-red-600 font-bebas tracking-wider mb-4 animate-pulse">OurFlix</h1>
-            <p>Carregando nossa história...</p>
-        </div>
+      <div className="bg-zinc-900 text-white min-h-screen flex flex-col items-center justify-center">
+        <svg className="animate-spin h-10 w-10 text-red-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p className="font-bebas text-2xl tracking-wider">Carregando os detalhes do casamento...</p>
+      </div>
     );
   }
 
-  if (error || !heroData) {
-     return (
-        <div className="bg-zinc-900 text-white min-h-screen flex flex-col items-center justify-center text-center p-4">
-            <h1 className="text-4xl text-red-600 font-bebas tracking-wider mb-4">Oops! Falha na Conexão</h1>
-            <p className="mb-4">Houve um problema ao carregar os dados do site.</p>
-            <p className="text-zinc-400 text-sm mb-6">{error}</p>
-            <button onClick={() => window.location.reload()} className="bg-red-600 text-white font-bold py-2 px-6 rounded hover:bg-red-700">
-                Tentar Novamente
-            </button>
-        </div>
+  if (error) {
+    return (
+      <div className="bg-zinc-900 text-white min-h-screen flex flex-col items-center justify-center text-center p-4">
+        <h2 className="font-bebas text-3xl text-red-500 mb-2">Oops! Algo deu errado.</h2>
+        <p className="text-zinc-400">Não foi possível carregar os dados do site. Por favor, tente recarregar a página.</p>
+        <p className="text-xs text-zinc-600 mt-4">Detalhes do erro: {error}</p>
+      </div>
     );
   }
 
@@ -107,14 +108,12 @@ const App: React.FC = () => {
 
       {isRSVPOpen && (
         <RSVPModal 
-          onClose={() => setIsRSVPOpen(false)} 
-          onConfirmSuccess={() => {
-              siteData.fetchData(); // Busca os dados novamente para atualizar a lista de presença no painel ADM
-          }}
+          onClose={() => setIsRSVPOpen(false)}
+          addRsvpResponse={addRsvpResponse}
         />
       )}
       {isGalleryOpen && <GalleryModal images={galleryImages} onClose={() => setIsGalleryOpen(false)} />}
-      {selectedGift && <GiftModal gift={selectedGift} pixConfig={siteData.pixConfig} onClose={() => setSelectedGift(null)} />}
+      {selectedGift && <GiftModal gift={selectedGift} pixConfig={pixConfig} onClose={() => setSelectedGift(null)} />}
       {isLoginOpen && <AdminLogin onClose={() => setIsLoginOpen(false)} onLoginSuccess={handleLoginSuccess} />}
       {isAuthenticated && <AdminPanel siteData={siteData} onClose={() => setIsAuthenticated(false)} />}
     </div>
