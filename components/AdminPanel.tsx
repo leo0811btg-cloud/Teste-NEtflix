@@ -9,6 +9,8 @@ interface AdminPanelProps {
   onClose: () => void;
 }
 
+const MAX_FILE_SIZE_BYTES = 4 * 1024 * 1024; // 4 MB - Limite de segurança para Vercel Hobby
+
 // Helper para upload de imagens para a API do Vercel Blob
 const uploadImage = async (file: File): Promise<string> => {
     const response = await fetch(`/api/upload-image?filename=${encodeURIComponent(file.name)}`, {
@@ -18,10 +20,24 @@ const uploadImage = async (file: File): Promise<string> => {
             'Content-Type': file.type,
         },
     });
+
     if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Falha ao enviar imagem.');
+        let errorMessage = 'Falha ao enviar imagem.';
+        try {
+            // Tenta interpretar a resposta como JSON, que é o esperado da nossa API
+            const errorData = await response.json();
+            errorMessage = errorData.details || errorData.error || errorMessage;
+        } catch (e) {
+            // Se falhar, é um erro da infraestrutura da Vercel (como limite de tamanho)
+            if (response.status === 413) {
+                 errorMessage = 'A imagem é muito grande. O limite máximo é de 4 MB.';
+            } else {
+                 errorMessage = `Erro do servidor (${response.status}). Tente novamente.`;
+            }
+        }
+        throw new Error(errorMessage);
     }
+
     const newBlob = await response.json();
     return newBlob.url;
 };
@@ -49,8 +65,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
         updateFunction: (url: string) => void
     ) => {
         if (!file) return;
-        setUploadingId(id);
+
+        // Limpa erros antigos e prepara para o novo upload
         setUploadError(null);
+        setUploadingId(id);
+
+        // Validação do tamanho do arquivo ANTES de enviar
+        if (file.size > MAX_FILE_SIZE_BYTES) {
+            setUploadError(`A imagem é muito grande (${(file.size / 1024 / 1024).toFixed(1)} MB). O tamanho máximo é de 4 MB.`);
+            setUploadingId(null);
+            return;
+        }
+
         try {
             const newUrl = await uploadImage(file);
             updateFunction(newUrl);
