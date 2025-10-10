@@ -19,7 +19,7 @@ const App: React.FC = () => {
   const { 
     heroData, ourStory, weddingParty, eventDetails, 
     galleryImages, giftList, pixConfig,
-    isLoading, error, addRsvpResponse
+    isLoading, error, addRsvpResponse, isConfigError
   } = siteData;
 
   const [isRSVPOpen, setIsRSVPOpen] = useState(false);
@@ -48,9 +48,44 @@ const App: React.FC = () => {
   if (error) {
     return (
       <div className="bg-zinc-900 text-white min-h-screen flex flex-col items-center justify-center text-center p-4">
-        <h2 className="font-bebas text-3xl text-red-500 mb-2">Oops! Algo deu errado.</h2>
-        <p className="text-zinc-400">Não foi possível carregar os dados do site. Por favor, tente recarregar a página.</p>
-        <p className="text-xs text-zinc-600 mt-4">Detalhes do erro: {error}</p>
+        {isConfigError ? (
+            <>
+                <h2 className="font-bebas text-3xl text-red-500 mb-2">Quase lá! Faltam algumas configurações.</h2>
+                <p className="text-zinc-300 max-w-2xl mb-6">
+                    Para o site funcionar, precisamos conectar o banco de dados (para textos) e o armazenamento de imagens. É super rápido!
+                </p>
+                <div className="bg-zinc-800 p-6 rounded-lg text-left max-w-3xl w-full border border-zinc-700">
+                    <h3 className="font-bold text-lg mb-4 text-white">Como resolver:</h3>
+                    <ol className="list-decimal list-inside space-y-4 text-zinc-400">
+                        <li>
+                            No painel do seu projeto na <strong>Vercel</strong>, vá para a aba <strong>"Storage"</strong>.
+                        </li>
+                        <li>
+                            <strong>Para os textos:</strong> Na seção "Marketplace", clique em <strong>"Upstash"</strong> e depois selecione <strong>"Upstash for Redis"</strong>. Conecte o plano gratuito (Hobby).
+                        </li>
+                        <li>
+                            <strong>Para as imagens:</strong> De volta à aba "Storage", encontre a opção <strong>"Blob (Fast object storage)"</strong> e conecte-a.
+                        </li>
+                        <li>
+                            Agora, vá para <strong>"Settings"</strong> &gt; <strong>"Environment Variables"</strong>.
+                        </li>
+                        <li>
+                            Verifique se as variáveis do KV (<code>KV_URL</code>, etc) e do Blob (<code>BLOB_READ_WRITE_TOKEN</code>) foram criadas, e se a variável <code>API_KEY</code> (com sua chave do Gemini) existe. Se não, crie-a.
+                        </li>
+                        <li>
+                            <strong>Passo crucial:</strong> Para aplicar tudo, vá na aba <strong>"Deployments"</strong>, encontre o último deploy, clique no menu (...) e selecione <strong>"Redeploy"</strong>.
+                        </li>
+                    </ol>
+                </div>
+                 <p className="text-xs text-zinc-600 mt-6">Detalhes técnicos do erro: {error}</p>
+            </>
+        ) : (
+            <>
+                <h2 className="font-bebas text-3xl text-red-500 mb-2">Oops! Algo deu errado.</h2>
+                <p className="text-zinc-400">Não foi possível carregar os dados do site. Por favor, tente recarregar a página.</p>
+                <p className="text-xs text-zinc-600 mt-4">Detalhes do erro: {error}</p>
+            </>
+        )}
       </div>
     );
   }

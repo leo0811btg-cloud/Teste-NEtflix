@@ -2,20 +2,24 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenAI } from "@google/genai";
 
-// A chave de API é lida de uma variável de ambiente no servidor
-const apiKey = process.env.API_KEY;
-
-if (!apiKey) {
-    throw new Error("API_KEY environment variable not set.");
-}
-
-const ai = new GoogleGenAI({ apiKey });
-
 // Esta é a função que a Vercel irá executar
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
+  // A chave de API é lida de uma variável de ambiente no servidor
+  const apiKey = process.env.API_KEY;
+
+  if (!apiKey) {
+      console.error("API_KEY environment variable not set.");
+      return res.status(500).json({ 
+        error: 'Configuração do Servidor Incompleta', 
+        details: 'A variável de ambiente API_KEY (Google Gemini) não foi encontrada. Por favor, configure-a no painel da Vercel.' 
+      });
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
+  
   // Apenas permite requisições do tipo POST
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');

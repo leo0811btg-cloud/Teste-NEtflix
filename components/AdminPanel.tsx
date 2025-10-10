@@ -9,14 +9,23 @@ interface AdminPanelProps {
   onClose: () => void;
 }
 
-const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = (error) => reject(error);
+// Helper para upload de imagens para a API do Vercel Blob
+const uploadImage = async (file: File): Promise<string> => {
+    const response = await fetch(`/api/upload-image?filename=${encodeURIComponent(file.name)}`, {
+        method: 'POST',
+        body: file,
+        headers: {
+            'Content-Type': file.type,
+        },
     });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Falha ao enviar imagem.');
+    }
+    const newBlob = await response.json();
+    return newBlob.url;
 };
+
 
 type AdminTab = 'content' | 'gifts' | 'rsvp';
 
@@ -30,43 +39,56 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
         rsvpResponses,
     } = siteData;
     const [activeTab, setActiveTab] = useState<AdminTab>('content');
+    const [uploadingId, setUploadingId] = useState<string | null>(null);
+    const [uploadError, setUploadError] = useState<string | null>(null);
+
+
+    const handleImageChange = async (
+        file: File | null,
+        id: string,
+        updateFunction: (url: string) => void
+    ) => {
+        if (!file) return;
+        setUploadingId(id);
+        setUploadError(null);
+        try {
+            const newUrl = await uploadImage(file);
+            updateFunction(newUrl);
+        } catch (error) {
+            console.error(error);
+            setUploadError(error instanceof Error ? error.message : 'Erro desconhecido');
+        } finally {
+            setUploadingId(null);
+        }
+    };
+
 
     const handleHeroChange = (field: keyof typeof heroData, value: string) => {
         setHeroData({ ...heroData, [field]: value });
     };
     
-    const handleHeroImageChange = async (file: File | null) => {
-        if (!file) return;
-        const base64 = await fileToBase64(file);
-        handleHeroChange('imageUrl', base64);
+    const handleHeroImageChange = (file: File | null) => {
+        handleImageChange(file, 'hero', (url) => handleHeroChange('imageUrl', url));
     };
 
-    const handleStoryChange = (index: number, field: 'title' | 'description', value: string) => {
+    const handleStoryChange = (index: number, field: 'title' | 'description' | 'imageUrl', value: string) => {
         const newStory = [...ourStory];
         newStory[index] = { ...newStory[index], [field]: value };
         setOurStory(newStory);
     };
     
-    const handleStoryImageChange = async (index: number, file: File | null) => {
-        if (!file) return;
-        const base64 = await fileToBase64(file);
-        const newStory = [...ourStory];
-        newStory[index] = { ...newStory[index], imageUrl: base64 };
-        setOurStory(newStory);
+    const handleStoryImageChange = (index: number, file: File | null) => {
+        handleImageChange(file, `story-${index}`, (url) => handleStoryChange(index, 'imageUrl', url));
     };
     
-    const handlePartyChange = (index: number, field: 'name' | 'role', value: string) => {
+    const handlePartyChange = (index: number, field: 'name' | 'role' | 'imageUrl', value: string) => {
         const newParty = [...weddingParty];
         newParty[index] = { ...newParty[index], [field]: value };
         setWeddingParty(newParty);
     };
 
-    const handlePartyImageChange = async (index: number, file: File | null) => {
-        if (!file) return;
-        const base64 = await fileToBase64(file);
-        const newParty = [...weddingParty];
-        newParty[index] = { ...newParty[index], imageUrl: base64 };
-        setWeddingParty(newParty);
+    const handlePartyImageChange = (index: number, file: File | null) => {
+        handleImageChange(file, `party-${index}`, (url) => handlePartyChange(index, 'imageUrl', url));
     };
 
     const handleGiftChange = (index: number, field: keyof Omit<Gift, 'id' | 'imageUrl'>, value: string | number) => {
@@ -76,12 +98,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
         setGiftList(newGiftList);
     };
 
-    const handleGiftImageChange = async (index: number, file: File | null) => {
-        if (!file) return;
-        const base64 = await fileToBase64(file);
-        const newGiftList = [...giftList];
-        newGiftList[index] = { ...newGiftList[index], imageUrl: base64 };
-        setGiftList(newGiftList);
+    const handleGiftImageChange = (index: number, file: File | null) => {
+         const newGiftList = [...giftList];
+         handleImageChange(file, `gift-${index}`, (url) => {
+            newGiftList[index] = { ...newGiftList[index], imageUrl: url };
+            setGiftList(newGiftList);
+         });
     };
 
     const handleAddGift = () => {
@@ -91,12 +113,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
             price: 0,
             imageUrl: 'https://placehold.co/400x300/27272a/e5e5e5?text=Imagem',
         };
-        // FIX: The setter from useSiteData does not support functional updates. Pass the new value directly.
         setGiftList([...giftList, newGift]);
     };
 
     const handleRemoveGift = (id: number) => {
-        // FIX: The setter from useSiteData does not support functional updates. Pass the new value directly.
         setGiftList(giftList.filter(gift => gift.id !== id));
     };
 
@@ -139,6 +159,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
             <button onClick={() => setActiveTab('rsvp')} className={`font-bebas text-xl py-2 px-4 ${activeTab === 'rsvp' ? 'text-red-500 border-b-2 border-red-500' : 'text-zinc-400'}`}>Confirmações</button>
         </div>
 
+        {uploadError && (
+            <div className="bg-red-800/50 text-red-200 p-3 rounded-lg mb-4 text-center">
+                <strong>Erro no Upload:</strong> {uploadError}
+            </div>
+        )}
+        
         {/* Content based on active tab */}
         <div className="space-y-8">
             {activeTab === 'content' && (
@@ -158,7 +184,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
                         <div>
                             <label className="block text-sm font-medium text-zinc-400 mb-1">Imagem de Fundo</label>
                             <img src={heroData.imageUrl} alt="Preview" className="w-48 h-auto object-cover rounded my-2"/>
-                            <input type="file" accept="image/*" onChange={e => handleHeroImageChange(e.target.files?.[0] || null)} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
+                            {uploadingId === 'hero' ? <p className="text-sm text-zinc-400">Enviando...</p> : 
+                                <input type="file" accept="image/*" onChange={e => handleHeroImageChange(e.target.files?.[0] || null)} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
+                            }
                         </div>
                     </div>
                 </fieldset>
@@ -177,7 +205,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
 
                                 <label className="block text-sm font-medium text-zinc-400 mb-1">Imagem</label>
                                 <img src={item.imageUrl} alt="Preview" className="w-40 h-auto object-cover rounded my-2"/>
+                                {uploadingId === `story-${index}` ? <p className="text-sm text-zinc-400">Enviando...</p> :
                                 <input type="file" accept="image/*" onChange={e => handleStoryImageChange(index, e.target.files?.[0] || null)} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
+                                }
                             </div>
                         ))}
                     </div>
@@ -197,7 +227,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
 
                                 <label className="block text-sm font-medium text-zinc-400 mb-1">Foto</label>
                                 <img src={person.imageUrl} alt="Preview" className="w-24 h-auto object-cover rounded my-2"/>
+                                {uploadingId === `party-${index}` ? <p className="text-sm text-zinc-400">Enviando...</p> :
                                 <input type="file" accept="image/*" onChange={e => handlePartyImageChange(index, e.target.files?.[0] || null)} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
+                                }
                             </div>
                         ))}
                     </div>
@@ -242,8 +274,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
                             <div>
                                     <label className="block text-sm font-medium text-zinc-400 mb-1">Imagem</label>
                                     <img src={gift.imageUrl} alt="Preview" className="w-32 h-auto object-cover rounded my-2"/>
-                                    <input type="file" accept="image/*" onChange={e => handleGiftImageChange(index, e.target.files?.[0] || null)} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
-
+                                    {uploadingId === `gift-${index}` ? <p className="text-sm text-zinc-400">Enviando...</p> :
+                                        <input type="file" accept="image/*" onChange={e => handleGiftImageChange(index, e.target.files?.[0] || null)} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
+                                    }
                                     <button onClick={() => handleRemoveGift(gift.id)} className="mt-4 w-full bg-red-800/50 text-red-200 text-sm font-bold py-2 px-4 rounded hover:bg-red-800/80 transition-colors">
                                         Remover Presente
                                     </button>
