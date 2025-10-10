@@ -7,6 +7,7 @@ export const DEFAULT_SITE_DATA: SiteData = {
     coupleNames: 'Maria & João',
     subtitle: 'Vão se casar!',
     imageUrl: 'https://picsum.photos/1920/1080?random=0',
+    imagePosition: 'center',
   },
   ourStory: [
     { id: 1, title: 'O Primeiro Encontro', description: 'Nossos caminhos se cruzaram em uma cafeteria charmosa, onde uma conversa sobre livros se tornou o início de tudo.', imageUrl: 'https://picsum.photos/800/450?random=9' },
@@ -25,8 +26,8 @@ export const DEFAULT_SITE_DATA: SiteData = {
     { id: 8, name: 'Tiago Ribeiro', role: 'Pajem', imageUrl: 'https://picsum.photos/400/500?random=8' },
   ],
   eventDetails: [
-    { id: 1, title: 'Cerimônia', date: '13 de Dezembro, 2025', time: '16:00', location: 'Chacara Rinald´s', address: 'Rua Olívio Xavier Duque, 191- Pres. Epitácio-SP', dressCode: 'Traje Social', icon: 'ceremony' },
-    { id: 2, title: 'Recepção', date: '13 de Dezembro, 2025', time: '17:30', location: 'Chacara Rinald´s', address: 'Rua Olívio Xavier Duque, 191- Pres. Epitácio-SP', dressCode: 'Traje Social', icon: 'party' },
+    { id: 1, title: 'Cerimônia', date: '25 de Dezembro, 2024', time: '16:00', location: 'Igreja Matriz', address: 'Rua Principal, 123, Cidade', dressCode: 'Traje Social', icon: 'ceremony' },
+    { id: 2, title: 'Recepção', date: '25 de Dezembro, 2024', time: '18:00', location: 'Salão de Festas Vista Linda', address: 'Av. das Flores, 456, Cidade', dressCode: 'Traje Social', icon: 'party' },
   ],
   galleryImages: [
       { id: 1, src: 'https://picsum.photos/800/600?random=13', alt: 'Foto do casal 1' },
