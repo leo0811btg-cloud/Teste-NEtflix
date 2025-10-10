@@ -9,6 +9,24 @@ interface AdminPanelProps {
   onClose: () => void;
 }
 
+// Helper para upload de imagens para a API do Vercel Blob
+const uploadImage = async (file: File): Promise<string> => {
+    const response = await fetch(`/api/upload-image?filename=${encodeURIComponent(file.name)}`, {
+        method: 'POST',
+        body: file,
+        headers: {
+            'Content-Type': file.type,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Falha ao enviar imagem.');
+    }
+    const newBlob = await response.json();
+    return newBlob.url;
+};
+
+
 type AdminTab = 'content' | 'gifts' | 'rsvp';
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => {
@@ -21,9 +39,36 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
         rsvpResponses,
     } = siteData;
     const [activeTab, setActiveTab] = useState<AdminTab>('content');
+    const [uploadingId, setUploadingId] = useState<string | null>(null);
+    const [uploadError, setUploadError] = useState<string | null>(null);
+
+
+    const handleImageChange = async (
+        file: File | null,
+        id: string,
+        updateFunction: (url: string) => void
+    ) => {
+        if (!file) return;
+        setUploadingId(id);
+        setUploadError(null);
+        try {
+            const newUrl = await uploadImage(file);
+            updateFunction(newUrl);
+        } catch (error) {
+            console.error(error);
+            setUploadError(error instanceof Error ? error.message : 'Erro desconhecido');
+        } finally {
+            setUploadingId(null);
+        }
+    };
+
 
     const handleHeroChange = (field: keyof typeof heroData, value: string) => {
         setHeroData({ ...heroData, [field]: value });
+    };
+    
+    const handleHeroImageChange = (file: File | null) => {
+        handleImageChange(file, 'hero', (url) => handleHeroChange('imageUrl', url));
     };
 
     const handleStoryChange = (index: number, field: 'title' | 'description' | 'imageUrl', value: string) => {
@@ -32,10 +77,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
         setOurStory(newStory);
     };
     
+    const handleStoryImageChange = (index: number, file: File | null) => {
+        handleImageChange(file, `story-${index}`, (url) => handleStoryChange(index, 'imageUrl', url));
+    };
+    
     const handlePartyChange = (index: number, field: 'name' | 'role' | 'imageUrl', value: string) => {
         const newParty = [...weddingParty];
         newParty[index] = { ...newParty[index], [field]: value };
         setWeddingParty(newParty);
+    };
+
+    const handlePartyImageChange = (index: number, file: File | null) => {
+        handleImageChange(file, `party-${index}`, (url) => handlePartyChange(index, 'imageUrl', url));
     };
 
     const handleGiftChange = (index: number, field: keyof Omit<Gift, 'id'>, value: string | number) => {
@@ -44,11 +97,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
         newGiftList[index] = { ...newGiftList[index], [field]: finalValue };
         setGiftList(newGiftList);
     };
-    
-    const handleGiftImageUrlChange = (index: number, url: string) => {
-        const newGiftList = [...giftList];
-        newGiftList[index] = { ...newGiftList[index], imageUrl: url };
-        setGiftList(newGiftList);
+
+    const handleGiftImageChange = (index: number, file: File | null) => {
+         const newGiftList = [...giftList];
+         handleImageChange(file, `gift-${index}`, (url) => {
+            newGiftList[index] = { ...newGiftList[index], imageUrl: url };
+            setGiftList(newGiftList);
+         });
     };
 
     const handleAddGift = () => {
@@ -56,7 +111,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
             id: Date.now(),
             name: 'Novo Presente',
             price: 0,
-            imageUrl: 'https://placehold.co/400x300/27272a/e5e5e5?text=Cole+a+URL',
+            imageUrl: 'https://placehold.co/400x300/27272a/e5e5e5?text=Imagem',
         };
         setGiftList([...giftList, newGift]);
     };
@@ -103,6 +158,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
             <button onClick={() => setActiveTab('gifts')} className={`font-bebas text-xl py-2 px-4 ${activeTab === 'gifts' ? 'text-red-500 border-b-2 border-red-500' : 'text-zinc-400'}`}>Presentes & PIX</button>
             <button onClick={() => setActiveTab('rsvp')} className={`font-bebas text-xl py-2 px-4 ${activeTab === 'rsvp' ? 'text-red-500 border-b-2 border-red-500' : 'text-zinc-400'}`}>Confirmações</button>
         </div>
+
+        {uploadError && (
+            <div className="bg-red-800/50 text-red-200 p-3 rounded-lg mb-4 text-center">
+                <strong>Erro no Upload:</strong> {uploadError}
+            </div>
+        )}
         
         {/* Content based on active tab */}
         <div className="space-y-8">
@@ -120,10 +181,30 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
                             <label className="block text-sm font-medium text-zinc-400 mb-1">Subtítulo</label>
                             <input type="text" value={heroData.subtitle} onChange={e => handleHeroChange('subtitle', e.target.value)} className="w-full bg-zinc-800 rounded p-2" />
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-zinc-400 mb-1">URL da Imagem de Fundo</label>
-                            <img src={heroData.imageUrl} alt="Preview" className="w-48 h-auto object-cover rounded my-2 border border-zinc-700"/>
-                            <input type="text" value={heroData.imageUrl} onChange={e => handleHeroChange('imageUrl', e.target.value)} placeholder="https://exemplo.com/imagem.jpg" className="w-full bg-zinc-800 rounded p-2" />
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-zinc-400 mb-1">Imagem de Fundo</label>
+                            <img src={heroData.imageUrl} alt="Preview" className="w-48 h-auto object-cover rounded my-2"/>
+                            <div className="bg-zinc-800 p-3 rounded-md space-y-2">
+                                <div>
+                                    <label className="block text-xs font-medium text-zinc-400 mb-1">Enviar um arquivo:</label>
+                                    {uploadingId === 'hero' ? (
+                                        <p className="text-sm text-zinc-400 py-2">Enviando...</p>
+                                    ) : (
+                                        <input type="file" accept="image/*" onChange={e => handleHeroImageChange(e.target.files?.[0] || null)} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
+                                    )}
+                                </div>
+                                <p className="text-center text-xs text-zinc-500">OU</p>
+                                <div>
+                                    <label className="block text-xs font-medium text-zinc-400 mb-1">Colar URL da imagem:</label>
+                                    <input 
+                                        type="url" 
+                                        value={heroData.imageUrl}
+                                        onChange={e => handleHeroChange('imageUrl', e.target.value)}
+                                        placeholder="https://exemplo.com/imagem.jpg"
+                                        className="w-full bg-zinc-700 rounded p-2 text-sm" 
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </fieldset>
@@ -133,16 +214,40 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
                     <legend className="px-2 font-bebas text-2xl">Nossa História (Enredo)</legend>
                     <div className="space-y-6">
                         {ourStory.map((item, index) => (
-                            <div key={item.id} className="border-b border-zinc-800 pb-4 last:border-b-0 last:pb-0">
-                                <label className="block text-sm font-medium text-zinc-400 mb-1">Título</label>
-                                <input type="text" value={item.title} onChange={e => handleStoryChange(index, 'title', e.target.value)} className="w-full bg-zinc-800 rounded p-2 mb-2" />
-                                
-                                <label className="block text-sm font-medium text-zinc-400 mb-1">Descrição</label>
-                                <textarea value={item.description} onChange={e => handleStoryChange(index, 'description', e.target.value)} className="w-full bg-zinc-800 rounded p-2 h-24 mb-2" />
-
-                                <label className="block text-sm font-medium text-zinc-400 mb-1">URL da Imagem</label>
-                                <img src={item.imageUrl} alt="Preview" className="w-40 h-auto object-cover rounded my-2 border border-zinc-700"/>
-                                <input type="text" value={item.imageUrl} onChange={e => handleStoryChange(index, 'imageUrl', e.target.value)} placeholder="https://exemplo.com/imagem.jpg" className="w-full bg-zinc-800 rounded p-2" />
+                            <div key={item.id} className="border-b border-zinc-800 pb-4 last:border-b-0 last:pb-0 space-y-2">
+                                <div>
+                                    <label className="block text-sm font-medium text-zinc-400 mb-1">Título</label>
+                                    <input type="text" value={item.title} onChange={e => handleStoryChange(index, 'title', e.target.value)} className="w-full bg-zinc-800 rounded p-2" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-zinc-400 mb-1">Descrição</label>
+                                    <textarea value={item.description} onChange={e => handleStoryChange(index, 'description', e.target.value)} className="w-full bg-zinc-800 rounded p-2 h-24" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-zinc-400 mb-1">Imagem</label>
+                                    <img src={item.imageUrl} alt="Preview" className="w-40 h-auto object-cover rounded my-2"/>
+                                    <div className="bg-zinc-800 p-3 rounded-md space-y-2">
+                                        <div>
+                                            <label className="block text-xs font-medium text-zinc-400 mb-1">Enviar um arquivo:</label>
+                                            {uploadingId === `story-${index}` ? (
+                                                <p className="text-sm text-zinc-400 py-2">Enviando...</p>
+                                            ) : (
+                                                <input type="file" accept="image/*" onChange={e => handleStoryImageChange(index, e.target.files?.[0] || null)} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
+                                            )}
+                                        </div>
+                                        <p className="text-center text-xs text-zinc-500">OU</p>
+                                        <div>
+                                            <label className="block text-xs font-medium text-zinc-400 mb-1">Colar URL da imagem:</label>
+                                            <input 
+                                                type="url" 
+                                                value={item.imageUrl}
+                                                onChange={e => handleStoryChange(index, 'imageUrl', e.target.value)}
+                                                placeholder="https://exemplo.com/imagem.jpg"
+                                                className="w-full bg-zinc-700 rounded p-2 text-sm" 
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -154,15 +259,39 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {weddingParty.map((person, index) => (
                             <div key={person.id} className="space-y-2">
-                                <label className="block text-sm font-medium text-zinc-400 mb-1">Nome</label>
-                                <input type="text" value={person.name} onChange={e => handlePartyChange(index, 'name', e.target.value)} className="w-full bg-zinc-800 rounded p-2" />
-
-                                <label className="block text-sm font-medium text-zinc-400 mb-1">Papel</label>
-                                <input type="text" value={person.role} onChange={e => handlePartyChange(index, 'role', e.target.value)} className="w-full bg-zinc-800 rounded p-2" />
-
-                                <label className="block text-sm font-medium text-zinc-400 mb-1">URL da Foto</label>
-                                <img src={person.imageUrl} alt="Preview" className="w-24 h-auto object-cover rounded my-2 border border-zinc-700"/>
-                                <input type="text" value={person.imageUrl} onChange={e => handlePartyChange(index, 'imageUrl', e.target.value)} placeholder="https://exemplo.com/imagem.jpg" className="w-full bg-zinc-800 rounded p-2" />
+                                <div>
+                                    <label className="block text-sm font-medium text-zinc-400 mb-1">Nome</label>
+                                    <input type="text" value={person.name} onChange={e => handlePartyChange(index, 'name', e.target.value)} className="w-full bg-zinc-800 rounded p-2" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-zinc-400 mb-1">Papel</label>
+                                    <input type="text" value={person.role} onChange={e => handlePartyChange(index, 'role', e.target.value)} className="w-full bg-zinc-800 rounded p-2" />
+                                </div>
+                                <div className="space-y-2 pt-2">
+                                    <label className="block text-sm font-medium text-zinc-400 mb-1">Foto</label>
+                                    <img src={person.imageUrl} alt="Preview" className="w-24 h-auto object-cover rounded my-2"/>
+                                    <div className="bg-zinc-800 p-3 rounded-md space-y-2">
+                                        <div>
+                                            <label className="block text-xs font-medium text-zinc-400 mb-1">Enviar um arquivo:</label>
+                                            {uploadingId === `party-${index}` ? (
+                                                <p className="text-sm text-zinc-400 py-2">Enviando...</p>
+                                            ) : (
+                                                <input type="file" accept="image/*" onChange={e => handlePartyImageChange(index, e.target.files?.[0] || null)} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
+                                            )}
+                                        </div>
+                                        <p className="text-center text-xs text-zinc-500">OU</p>
+                                        <div>
+                                            <label className="block text-xs font-medium text-zinc-400 mb-1">Colar URL da imagem:</label>
+                                            <input 
+                                                type="url" 
+                                                value={person.imageUrl}
+                                                onChange={e => handlePartyChange(index, 'imageUrl', e.target.value)}
+                                                placeholder="https://exemplo.com/imagem.jpg"
+                                                className="w-full bg-zinc-700 rounded p-2 text-sm" 
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -204,11 +333,31 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
                                     <label className="block text-sm font-medium text-zinc-400 mb-1">Preço (R$)</label>
                                     <input type="number" value={gift.price} onChange={e => handleGiftChange(index, 'price', e.target.value)} className="w-full bg-zinc-800 rounded p-2" />
                             </div>
-                            <div>
-                                    <label className="block text-sm font-medium text-zinc-400 mb-1">URL da Imagem</label>
-                                    <img src={gift.imageUrl} alt="Preview" className="w-32 h-auto object-cover rounded my-2 border border-zinc-700"/>
-                                    <input type="text" value={gift.imageUrl} onChange={e => handleGiftImageUrlChange(index, e.target.value)} placeholder="https://exemplo.com/imagem.jpg" className="w-full bg-zinc-800 rounded p-2" />
-                                    <button onClick={() => handleRemoveGift(gift.id)} className="mt-4 w-full bg-red-800/50 text-red-200 text-sm font-bold py-2 px-4 rounded hover:bg-red-800/80 transition-colors">
+                            <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-zinc-400 mb-1">Imagem</label>
+                                    <img src={gift.imageUrl} alt="Preview" className="w-32 h-auto object-cover rounded my-2"/>
+                                    <div className="bg-zinc-800 p-3 rounded-md space-y-2">
+                                        <div>
+                                            <label className="block text-xs font-medium text-zinc-400 mb-1">Enviar um arquivo:</label>
+                                            {uploadingId === `gift-${index}` ? (
+                                                <p className="text-sm text-zinc-400 py-2">Enviando...</p>
+                                            ) : (
+                                                <input type="file" accept="image/*" onChange={e => handleGiftImageChange(index, e.target.files?.[0] || null)} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
+                                            )}
+                                        </div>
+                                        <p className="text-center text-xs text-zinc-500">OU</p>
+                                        <div>
+                                            <label className="block text-xs font-medium text-zinc-400 mb-1">Colar URL da imagem:</label>
+                                            <input 
+                                                type="url" 
+                                                value={gift.imageUrl}
+                                                onChange={e => handleGiftChange(index, 'imageUrl', e.target.value)}
+                                                placeholder="https://exemplo.com/imagem.jpg"
+                                                className="w-full bg-zinc-700 rounded p-2 text-sm" 
+                                            />
+                                        </div>
+                                    </div>
+                                    <button onClick={() => handleRemoveGift(gift.id)} className="!mt-4 w-full bg-red-800/50 text-red-200 text-sm font-bold py-2 px-4 rounded hover:bg-red-800/80 transition-colors">
                                         Remover Presente
                                     </button>
                             </div>
