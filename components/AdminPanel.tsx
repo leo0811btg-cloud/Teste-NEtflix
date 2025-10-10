@@ -13,11 +13,12 @@ const MAX_FILE_SIZE_BYTES = 4 * 1024 * 1024; // 4 MB - Limite de segurança para
 
 // Helper para upload de imagens para a API do Vercel Blob
 const uploadImage = async (file: File): Promise<string> => {
-    const response = await fetch(`/api/upload-image?filename=${encodeURIComponent(file.name)}`, {
+    const response = await fetch(`/api/upload-image`, {
         method: 'POST',
         body: file,
         headers: {
             'Content-Type': file.type,
+            'x-vercel-filename': encodeURIComponent(file.name)
         },
     });
 
