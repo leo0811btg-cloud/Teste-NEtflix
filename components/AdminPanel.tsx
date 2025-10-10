@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import type { useSiteData } from '../hooks/useSiteData';
-import type { Gift, PixConfig } from '../types';
+import type { Gift, PixConfig, HeroData } from '../types';
 
 type SiteData = ReturnType<typeof useSiteData>;
 
@@ -63,7 +63,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
     };
 
 
-    const handleHeroChange = (field: keyof typeof heroData, value: string) => {
+    const handleHeroChange = (field: keyof HeroData, value: string) => {
         setHeroData({ ...heroData, [field]: value });
     };
     
@@ -181,9 +181,28 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
                             <label className="block text-sm font-medium text-zinc-400 mb-1">Subtítulo</label>
                             <input type="text" value={heroData.subtitle} onChange={e => handleHeroChange('subtitle', e.target.value)} className="w-full bg-zinc-800 rounded p-2" />
                         </div>
+                        <div>
+                            <label className="block text-sm font-medium text-zinc-400 mb-1">Posição da Imagem</label>
+                            <select
+                                value={heroData.imagePosition || 'center'}
+                                onChange={e => handleHeroChange('imagePosition', e.target.value)}
+                                className="w-full bg-zinc-800 rounded p-2"
+                            >
+                                <option value="center">Centro</option>
+                                <option value="top">Topo</option>
+                                <option value="bottom">Baixo</option>
+                                <option value="left">Esquerda</option>
+                                <option value="right">Direita</option>
+                                <option value="top left">Canto Superior Esquerdo</option>
+                                <option value="top right">Canto Superior Direito</option>
+                                <option value="bottom left">Canto Inferior Esquerdo</option>
+                                <option value="bottom right">Canto Inferior Direito</option>
+                            </select>
+                            <p className="text-xs text-zinc-500 mt-1">Isso ajuda a focar na parte mais importante da foto.</p>
+                        </div>
                         <div className="space-y-2">
                             <label className="block text-sm font-medium text-zinc-400 mb-1">Imagem de Fundo</label>
-                            <img src={heroData.imageUrl} alt="Preview" className="w-48 h-auto object-cover rounded my-2"/>
+                            <img src={heroData.imageUrl} alt="Preview" className="w-48 h-auto object-cover rounded my-2" style={{ objectPosition: heroData.imagePosition || 'center' }}/>
                             <div className="bg-zinc-800 p-3 rounded-md space-y-2">
                                 <div>
                                     <label className="block text-xs font-medium text-zinc-400 mb-1">Enviar um arquivo:</label>
