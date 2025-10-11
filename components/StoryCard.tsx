@@ -12,13 +12,13 @@ export const StoryCard: React.FC<StoryCardProps> = ({ item }) => {
         <img 
           src={item.imageUrl} 
           alt={item.title} 
-          className="w-full h-36 md:h-44 object-cover" 
+          className="w-full h-72 md:h-88 object-cover" 
           style={{ objectPosition: item.imagePosition || 'center' }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
         <div className="p-4 bg-zinc-800">
             <h4 className="font-bold text-lg mb-2">{item.title}</h4>
-            <p className="text-sm text-zinc-400 h-20 overflow-hidden">{item.description}</p>
+            <p className="text-sm text-zinc-300 h-24 overflow-hidden">{item.description}</p>
         </div>
       </div>
     </div>
