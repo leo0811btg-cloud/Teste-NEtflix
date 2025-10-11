@@ -34,7 +34,9 @@ export const useSiteData = () => {
             } else {
                 const fetchedData: SiteData | null = await response.json();
                 if (fetchedData) {
-                    setData(fetchedData);
+                    // Garante que todos os campos existam, mesmo que os dados salvos sejam de uma versão antiga
+                    const mergedData = { ...DEFAULT_SITE_DATA, ...fetchedData };
+                    setData(mergedData);
                 } else {
                     // Se o banco retornar null, trata como "não encontrado"
                     console.log("KV returned null, initializing with default data...");

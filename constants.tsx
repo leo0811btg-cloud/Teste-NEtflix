@@ -4,7 +4,7 @@ export const WEDDING_DATE = '2024-12-25T16:00:00';
 
 export const DEFAULT_SITE_DATA: SiteData = {
   heroData: {
-    coupleNames: 'Maria & João',
+    coupleNames: 'Yasmin & Leomar',
     subtitle: 'Vão se casar!',
     imageUrl: 'https://picsum.photos/1920/1080?random=0',
     imagePosition: 'center',
@@ -16,8 +16,8 @@ export const DEFAULT_SITE_DATA: SiteData = {
     { id: 4, title: 'O "Sim"', description: 'Agora, estamos prontos para o nosso "felizes para sempre" e mal podemos esperar para celebrar com vocês!', imageUrl: 'https://picsum.photos/800/450?random=12', imagePosition: 'center' },
   ],
   weddingParty: [
-    { id: 1, name: 'Maria Silva', role: 'Noiva', imageUrl: 'https://picsum.photos/400/500?random=1', imagePosition: 'center' },
-    { id: 2, name: 'João Pereira', role: 'Noivo', imageUrl: 'https://picsum.photos/400/500?random=2', imagePosition: 'center' },
+    { id: 1, name: 'Yasmin', role: 'Noiva', imageUrl: 'https://picsum.photos/400/500?random=1', imagePosition: 'center' },
+    { id: 2, name: 'Leomar', role: 'Noivo', imageUrl: 'https://picsum.photos/400/500?random=2', imagePosition: 'center' },
     { id: 3, name: 'Ana Costa', role: 'Madrinha', imageUrl: 'https://picsum.photos/400/500?random=3', imagePosition: 'center' },
     { id: 4, name: 'Pedro Martins', role: 'Padrinho', imageUrl: 'https://picsum.photos/400/500?random=4', imagePosition: 'center' },
     { id: 5, name: 'Beatriz Almeida', role: 'Madrinha', imageUrl: 'https://picsum.photos/400/500?random=5', imagePosition: 'center' },
@@ -46,8 +46,8 @@ export const DEFAULT_SITE_DATA: SiteData = {
       { id: 6, name: 'Jogo de Cama', price: 250, imageUrl: 'https://picsum.photos/400/300?random=25', imagePosition: 'center' },
   ],
   pixConfig: {
-      key: 'maria.joao.casamento@email.com',
-      recipientName: 'Maria Silva',
+      key: 'yasmin.leomar.casamento@email.com',
+      recipientName: 'Yasmin',
       city: 'SAO PAULO',
   },
   rsvpResponses: [],

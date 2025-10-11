@@ -33,7 +33,7 @@ export default async function handler(
         return res.status(400).json({ error: 'Keywords and genre are required.' });
     }
 
-    const prompt = `Escreva uma sinopse de filme no estilo de um(a) ${genre} para o casal Maria e João. A história deles envolve os seguintes elementos: ${keywords}. A sinopse deve ser curta, criativa e cativante, como se fosse para a Netflix. Termine com uma frase de efeito.`;
+    const prompt = `Escreva uma sinopse de filme no estilo de um(a) ${genre} para o casal Yasmin e Leomar. A história deles envolve os seguintes elementos: ${keywords}. A sinopse deve ser curta, criativa e cativante, como se fosse para a Netflix. Termine com uma frase de efeito.`;
 
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
