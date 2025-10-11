@@ -92,6 +92,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
     const handlePartyImageChange = (index: number, file: File | null) => {
         handleImageChange(file, `party-${index}`, (url) => handlePartyChange(index, 'imageUrl', url));
     };
+
+    const handleAddPartyMember = () => {
+        const newMember: Person = {
+            id: Date.now(),
+            name: 'Novo Membro',
+            role: 'Convidado de Honra',
+            imageUrl: 'https://placehold.co/400x500/27272a/e5e5e5?text=Foto',
+            imagePosition: 'center',
+        };
+        setWeddingParty([...weddingParty, newMember]);
+    };
+
+    const handleRemovePartyMember = (id: number) => {
+        setWeddingParty(weddingParty.filter(p => p.id !== id));
+    };
     
     const handleEventChange = (index: number, field: keyof EventDetails, value: string) => {
         const newDetails = [...eventDetails];
@@ -325,7 +340,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
                     <legend className="px-2 font-bebas text-2xl">Elenco (Padrinhos e Noivos)</legend>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {weddingParty.map((person, index) => (
-                            <div key={person.id} className="space-y-2">
+                            <div key={person.id} className="relative space-y-2 bg-zinc-800/50 p-4 rounded-lg">
+                                 {index > 1 && (
+                                    <button 
+                                        onClick={() => handleRemovePartyMember(person.id)}
+                                        className="absolute top-2 right-2 bg-red-900/70 text-red-200 text-xs font-bold p-1 rounded-full leading-none w-6 h-6 flex items-center justify-center hover:bg-red-800 transition-colors"
+                                        aria-label="Remover membro"
+                                    >
+                                        &times;
+                                    </button>
+                                 )}
                                 <div>
                                     <label className="block text-sm font-medium text-zinc-400 mb-1">Nome</label>
                                     <input type="text" value={person.name} onChange={e => handlePartyChange(index, 'name', e.target.value)} className="w-full bg-zinc-800 rounded p-2" />
@@ -379,6 +403,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
                                 </div>
                             </div>
                         ))}
+                    </div>
+                     <div className="mt-6">
+                        <button onClick={handleAddPartyMember} className="w-full bg-green-600/80 text-white font-bold py-2 px-4 rounded hover:bg-green-600 transition-colors">
+                            Adicionar Membro ao Elenco
+                        </button>
                     </div>
                 </fieldset>
                 
