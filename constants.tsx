@@ -24,10 +24,6 @@ export const DEFAULT_SITE_DATA: SiteData = {
     { id: 6, name: 'Lucas Santos', role: 'Padrinho', imageUrl: 'https://picsum.photos/400/500?random=6', imagePosition: 'center' },
     { id: 7, name: 'Sofia Ferreira', role: 'Dama de Honra', imageUrl: 'https://picsum.photos/400/500?random=7', imagePosition: 'center' },
     { id: 8, name: 'Tiago Ribeiro', role: 'Pajem', imageUrl: 'https://picsum.photos/400/500?random=8', imagePosition: 'center' },
-    { id: 9, name: 'Novo Membro', role: 'Convidado de Honra', imageUrl: 'https://picsum.photos/400/500?random=26', imagePosition: 'center' },
-    { id: 10, name: 'Novo Membro', role: 'Convidado de Honra', imageUrl: 'https://picsum.photos/400/500?random=27', imagePosition: 'center' },
-    { id: 11, name: 'Novo Membro', role: 'Convidado de Honra', imageUrl: 'https://picsum.photos/400/500?random=28', imagePosition: 'center' },
-    { id: 12, name: 'Novo Membro', role: 'Convidado de Honra', imageUrl: 'https://picsum.photos/400/500?random=29', imagePosition: 'center' },
   ],
   eventDetails: [
     { id: 1, title: 'Cerimônia', date: '25 de Dezembro, 2024', time: '16:00', location: 'Igreja Matriz', address: 'Rua Principal, 123, Cidade', dressCode: 'Traje Social', icon: 'ceremony' },
