@@ -191,7 +191,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
     <div className="fixed inset-0 bg-zinc-900 bg-opacity-95 z-[100] p-4 md:p-8 overflow-y-auto text-white" aria-modal="true" role="dialog">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-            <h2 className="font-bebas text-4xl text-red-500">PAINEL DE CONTROLE TOTAL</h2>
+            <h2 className="font-bebas text-4xl text-red-500">PAINEL DE EDIÇÃO FINAL</h2>
             <button onClick={onClose} className="bg-red-600 text-white font-bold py-2 px-6 rounded hover:bg-red-700 transition-colors">
                 Fechar
             </button>
