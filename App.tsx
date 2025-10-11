@@ -131,7 +131,7 @@ const App: React.FC = () => {
         </div>
       </main>
       <footer className="text-center py-8 text-zinc-500 border-t border-zinc-800 relative">
-        <p>Feito com ❤️ para Maria & João</p>
+        <p>Feito com ❤️ para Yasmin & Leomar</p>
         <p>&copy; 2024. Todos os direitos reservados.</p>
         <button 
           onClick={() => setIsLoginOpen(true)}
