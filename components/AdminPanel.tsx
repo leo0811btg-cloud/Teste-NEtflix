@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import type { useSiteData } from '../hooks/useSiteData';
-import type { Gift, PixConfig, HeroData, StoryItem, Person } from '../types';
+import type { Gift, PixConfig, HeroData, StoryItem, Person, EventDetails, GalleryImage } from '../types';
 
 type SiteData = ReturnType<typeof useSiteData>;
 
@@ -34,6 +34,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
         heroData, setHeroData, 
         ourStory, setOurStory,
         weddingParty, setWeddingParty,
+        eventDetails, setEventDetails,
+        galleryImages, setGalleryImages,
         giftList, setGiftList,
         pixConfig, setPixConfig,
         rsvpResponses,
@@ -89,6 +91,33 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
 
     const handlePartyImageChange = (index: number, file: File | null) => {
         handleImageChange(file, `party-${index}`, (url) => handlePartyChange(index, 'imageUrl', url));
+    };
+    
+    const handleEventChange = (index: number, field: keyof EventDetails, value: string) => {
+        const newDetails = [...eventDetails];
+        newDetails[index] = { ...newDetails[index], [field]: value };
+        setEventDetails(newDetails);
+    };
+
+    const handleGalleryImageChange = (index: number, field: keyof GalleryImage, value: string) => {
+        const newImages = [...galleryImages];
+        newImages[index] = { ...newImages[index], [field]: value };
+        setGalleryImages(newImages);
+    };
+
+    const handleAddGalleryImage = async (file: File | null) => {
+        handleImageChange(file, 'new-gallery-image', (url) => {
+            const newImage: GalleryImage = {
+                id: Date.now(),
+                src: url,
+                alt: 'Nova foto do casal'
+            };
+            setGalleryImages([...galleryImages, newImage]);
+        });
+    };
+
+    const handleRemoveGalleryImage = (id: number) => {
+        setGalleryImages(galleryImages.filter(image => image.id !== id));
     };
 
     const handleGiftChange = (index: number, field: keyof Omit<Gift, 'id'>, value: string | number) => {
@@ -348,6 +377,73 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                        ))}
+                    </div>
+                </fieldset>
+                
+                {/* Event Details Section */}
+                <fieldset className="border border-zinc-700 p-4 rounded-lg">
+                    <legend className="px-2 font-bebas text-2xl">A Grande Estreia (Detalhes do Evento)</legend>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {eventDetails.map((event, index) => (
+                            <div key={event.id} className="space-y-2 bg-zinc-800/50 p-4 rounded-lg">
+                                <h4 className="font-bebas text-xl text-red-400">{event.title}</h4>
+                                <div>
+                                    <label className="block text-sm font-medium text-zinc-400 mb-1">Título</label>
+                                    <input type="text" value={event.title} onChange={e => handleEventChange(index, 'title', e.target.value)} className="w-full bg-zinc-800 rounded p-2" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-zinc-400 mb-1">Data</label>
+                                    <input type="text" value={event.date} onChange={e => handleEventChange(index, 'date', e.target.value)} className="w-full bg-zinc-800 rounded p-2" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-zinc-400 mb-1">Hora</label>
+                                    <input type="text" value={event.time} onChange={e => handleEventChange(index, 'time', e.target.value)} className="w-full bg-zinc-800 rounded p-2" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-zinc-400 mb-1">Local</label>
+                                    <input type="text" value={event.location} onChange={e => handleEventChange(index, 'location', e.target.value)} className="w-full bg-zinc-800 rounded p-2" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-zinc-400 mb-1">Endereço</label>
+                                    <input type="text" value={event.address} onChange={e => handleEventChange(index, 'address', e.target.value)} className="w-full bg-zinc-800 rounded p-2" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-zinc-400 mb-1">Traje</label>
+                                    <input type="text" value={event.dressCode} onChange={e => handleEventChange(index, 'dressCode', e.target.value)} className="w-full bg-zinc-800 rounded p-2" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </fieldset>
+                
+                {/* Gallery Images Section */}
+                <fieldset className="border border-zinc-700 p-4 rounded-lg">
+                    <legend className="px-2 font-bebas text-2xl">Galeria de Fotos</legend>
+                     <div className="bg-zinc-800/50 p-4 rounded-lg mb-6">
+                        <label className="block text-sm font-medium text-zinc-300 mb-2">Adicionar Nova Foto</label>
+                        {uploadingId === 'new-gallery-image' ? (
+                            <p className="text-sm text-zinc-400 py-2">Enviando...</p>
+                        ) : (
+                            <input type="file" accept="image/*" onChange={e => handleAddGalleryImage(e.target.files?.[0] || null)} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
+                        )}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {galleryImages.map((image, index) => (
+                            <div key={image.id} className="bg-zinc-800 p-3 rounded-lg space-y-2">
+                                <img src={image.src} alt={image.alt} className="w-full h-32 object-cover rounded" />
+                                <div>
+                                    <label className="block text-xs font-medium text-zinc-400 mb-1">URL da Imagem</label>
+                                    <input type="url" value={image.src} onChange={e => handleGalleryImageChange(index, 'src', e.target.value)} className="w-full bg-zinc-700 rounded p-2 text-sm" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-zinc-400 mb-1">Texto Alternativo (para acessibilidade)</label>
+                                    <input type="text" value={image.alt} onChange={e => handleGalleryImageChange(index, 'alt', e.target.value)} className="w-full bg-zinc-700 rounded p-2 text-sm" />
+                                </div>
+                                <button onClick={() => handleRemoveGalleryImage(image.id)} className="w-full bg-red-800/50 text-red-200 text-sm font-bold py-2 px-4 rounded hover:bg-red-800/80 transition-colors">
+                                    Remover Foto
+                                </button>
                             </div>
                         ))}
                     </div>
