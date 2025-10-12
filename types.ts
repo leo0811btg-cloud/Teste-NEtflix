@@ -70,4 +70,5 @@ export interface SiteData {
     giftList: Gift[];
     pixConfig: PixConfig;
     rsvpResponses: RsvpResponse[];
+    guestList: string[];
 }
