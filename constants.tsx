@@ -51,4 +51,5 @@ export const DEFAULT_SITE_DATA: SiteData = {
       city: 'SAO PAULO',
   },
   rsvpResponses: [],
+  guestList: [],
 };
