@@ -4,9 +4,16 @@ import type { RsvpResponse } from '../types';
 interface RSVPModalProps {
   onClose: () => void;
   addRsvpResponse: (response: Omit<RsvpResponse, 'id'>) => Promise<void>;
+  guestList: string[];
+  rsvpResponses: RsvpResponse[];
 }
 
-export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, addRsvpResponse }) => {
+// Helper function to normalize strings for comparison (case-insensitive, accent-insensitive)
+const normalizeString = (str: string) => 
+  str.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+
+export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, addRsvpResponse, guestList, rsvpResponses }) => {
   const [name, setName] = useState('');
   const [attendance, setAttendance] = useState<'yes' | 'no' | ''>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -16,18 +23,46 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, addRsvpResponse }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (name && attendance) {
-      setIsSubmitting(true);
-      setError('');
-      
-      try {
-        await addRsvpResponse({ name, attendance });
-        setSubmitted(true);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Ocorreu um erro desconhecido. Por favor, tente novamente.');
-      } finally {
+    if (!name || !attendance) return;
+    
+    setIsSubmitting(true);
+    setError('');
+    
+    const normalizedName = normalizeString(name);
+
+    // 1. Check if guest list is active and if name is on it
+    if (guestList && guestList.length > 0) {
+      const isGuestOnList = guestList.some(guest => normalizeString(guest) === normalizedName);
+      if (!isGuestOnList) {
+        setError('Seu nome não foi encontrado na lista. Por favor, verifique a digitação ou entre em contato com os noivos.');
         setIsSubmitting(false);
+        return;
       }
+    }
+
+    // 2. Check if this guest has already responded
+    const hasAlreadyResponded = rsvpResponses.some(response => normalizeString(response.name) === normalizedName);
+    if (hasAlreadyResponded) {
+      setError('Já recebemos uma resposta para este nome. Obrigado!');
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      await addRsvpResponse({ name: name.trim(), attendance });
+      setSubmitted(true);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Ocorreu um erro desconhecido. Por favor, tente novamente.';
+      // Check for specific error messages from server to provide better feedback
+      if (errorMessage.includes('convidado já respondeu')) {
+        setError('Já recebemos uma resposta para este nome. Obrigado!');
+      } else if (errorMessage.includes('não está na lista')) {
+        setError('Seu nome não foi encontrado na lista. Por favor, verifique a digitação ou entre em contato com os noivos.');
+      } else {
+        setError(errorMessage);
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -54,7 +89,7 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, addRsvpResponse }
             <h3 className="font-bebas text-3xl text-center text-white mb-6">Confirme sua Presença</h3>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-zinc-400 mb-2">Seu nome completo</label>
+                <label htmlFor="name" className="block text-sm font-medium text-zinc-400 mb-2">Seu nome completo (como no convite)</label>
                 <input
                   type="text"
                   id="name"
