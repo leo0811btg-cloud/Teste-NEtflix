@@ -97,32 +97,29 @@ export const useSiteData = () => {
     }, [saveData]);
 
     const addRsvpResponse = useCallback(async (newResponse: Omit<RsvpResponse, 'id'>) => {
-        const fullResponse: RsvpResponse = { ...newResponse, id: Date.now() };
         
-        // Atualiza o estado local imediatamente para feedback rápido
-        setData(prevData => ({
-            ...prevData,
-            rsvpResponses: [...(prevData.rsvpResponses || []), fullResponse]
-        }));
-
         // Envia para a API para persistir
         try {
             const response = await fetch(RSVP_ENDPOINT, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(fullResponse)
+                body: JSON.stringify(newResponse)
             });
             if (!response.ok) {
-                throw new Error('Failed to submit RSVP');
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to submit RSVP');
             }
+            // Se a API foi bem-sucedida, atualiza o estado local
+            const fullResponse: RsvpResponse = { ...newResponse, id: Date.now() };
+            setData(prevData => ({
+                ...prevData,
+                rsvpResponses: [...(prevData.rsvpResponses || []), fullResponse]
+            }));
+
         } catch (err) {
              console.error(err);
-             setError(err instanceof Error ? err.message : 'Failed to submit RSVP');
-             // Se falhar, reverte o estado (opcional, mas bom para consistência)
-             setData(prevData => ({
-                ...prevData,
-                rsvpResponses: prevData.rsvpResponses.filter(r => r.id !== fullResponse.id)
-             }));
+             // Propaga o erro para que o modal possa exibi-lo
+             throw err;
         }
     }, []);
 
@@ -135,6 +132,7 @@ export const useSiteData = () => {
         giftList: data.giftList,
         pixConfig: data.pixConfig,
         rsvpResponses: data.rsvpResponses,
+        guestList: data.guestList,
         
         setHeroData: (value: HeroData) => updateAndSave('heroData', value),
         setOurStory: (value: StoryItem[]) => updateAndSave('ourStory', value),
@@ -144,6 +142,7 @@ export const useSiteData = () => {
         setGiftList: (value: Gift[]) => updateAndSave('giftList', value),
         setPixConfig: (value: PixConfig) => updateAndSave('pixConfig', value),
         setRsvpResponses: (value: RsvpResponse[]) => updateAndSave('rsvpResponses', value),
+        setGuestList: (value: string[]) => updateAndSave('guestList', value),
         
         addRsvpResponse,
         isLoading,
