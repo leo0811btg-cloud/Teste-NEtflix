@@ -25,7 +25,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 return res.status(404).json({ error: 'Site data not found. Cannot update RSVP.' });
             }
             
-            const guestIndex = currentData.guestList.findIndex(g => g.id === guestId);
+            // Verificação de robustez: Garante que a lista de convidados existe e é um array.
+            if (!Array.isArray(currentData.guestList)) {
+                return res.status(404).json({ error: 'Guest list is missing or invalid. Cannot find the specified guest.' });
+            }
+            
+            // Procura o convidado de forma segura, verificando se cada item é um objeto válido
+            const guestIndex = currentData.guestList.findIndex(g => g && typeof g.id !== 'undefined' && g.id === guestId);
 
             if (guestIndex === -1) {
                 return res.status(404).json({ error: 'Guest not found.' });
