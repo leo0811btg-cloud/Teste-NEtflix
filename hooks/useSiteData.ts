@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { SiteData, HeroData, StoryItem, Person, EventDetails, GalleryImage, Gift, PixConfig, RsvpResponse } from '../types';
+import type { SiteData, HeroData, StoryItem, Person, EventDetails, GalleryImage, Gift, PixConfig, Guest } from '../types';
 import { DEFAULT_SITE_DATA } from '../constants';
 
 const API_ENDPOINT = '/api/site-data';
@@ -96,32 +96,36 @@ export const useSiteData = () => {
         });
     }, [saveData]);
 
-    const addRsvpResponse = useCallback(async (newResponse: Omit<RsvpResponse, 'id'>) => {
-        
+    const updateGuestAttendance = useCallback(async (guestId: number, attendance: 'yes' | 'no') => {
+        const originalGuestList = data.guestList;
+        // Atualiza o estado local imediatamente para feedback rápido
+        setData(prevData => ({
+            ...prevData,
+            guestList: prevData.guestList.map(guest => 
+                guest.id === guestId ? { ...guest, attendance } : guest
+            )
+        }));
+
         // Envia para a API para persistir
         try {
             const response = await fetch(RSVP_ENDPOINT, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newResponse)
+                body: JSON.stringify({ guestId, attendance })
             });
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to submit RSVP');
+                throw new Error('Failed to submit RSVP');
             }
-            // Se a API foi bem-sucedida, atualiza o estado local
-            const fullResponse: RsvpResponse = { ...newResponse, id: Date.now() };
-            setData(prevData => ({
-                ...prevData,
-                rsvpResponses: [...(prevData.rsvpResponses || []), fullResponse]
-            }));
-
         } catch (err) {
              console.error(err);
-             // Propaga o erro para que o modal possa exibi-lo
-             throw err;
+             setError(err instanceof Error ? err.message : 'Failed to submit RSVP');
+             // Se falhar, reverte o estado
+             setData(prevData => ({
+                ...prevData,
+                guestList: originalGuestList,
+             }));
         }
-    }, []);
+    }, [data.guestList]);
 
     return {
         heroData: data.heroData,
@@ -131,7 +135,6 @@ export const useSiteData = () => {
         galleryImages: data.galleryImages,
         giftList: data.giftList,
         pixConfig: data.pixConfig,
-        rsvpResponses: data.rsvpResponses,
         guestList: data.guestList,
         
         setHeroData: (value: HeroData) => updateAndSave('heroData', value),
@@ -141,10 +144,9 @@ export const useSiteData = () => {
         setGalleryImages: (value: GalleryImage[]) => updateAndSave('galleryImages', value),
         setGiftList: (value: Gift[]) => updateAndSave('giftList', value),
         setPixConfig: (value: PixConfig) => updateAndSave('pixConfig', value),
-        setRsvpResponses: (value: RsvpResponse[]) => updateAndSave('rsvpResponses', value),
-        setGuestList: (value: string[]) => updateAndSave('guestList', value),
+        setGuestList: (value: Guest[]) => updateAndSave('guestList', value),
         
-        addRsvpResponse,
+        updateGuestAttendance,
         isLoading,
         error,
         isConfigError,

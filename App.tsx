@@ -18,8 +18,8 @@ const App: React.FC = () => {
   const siteData = useSiteData();
   const { 
     heroData, ourStory, weddingParty, eventDetails, 
-    galleryImages, giftList, pixConfig, guestList, rsvpResponses,
-    isLoading, error, addRsvpResponse, isConfigError
+    galleryImages, giftList, pixConfig, guestList,
+    isLoading, error, updateGuestAttendance, isConfigError
   } = siteData;
 
   const [isRSVPOpen, setIsRSVPOpen] = useState(false);
@@ -144,9 +144,8 @@ const App: React.FC = () => {
       {isRSVPOpen && (
         <RSVPModal 
           onClose={() => setIsRSVPOpen(false)}
-          addRsvpResponse={addRsvpResponse}
-          guestList={guestList || []}
-          rsvpResponses={rsvpResponses || []}
+          guestList={guestList}
+          updateGuestAttendance={updateGuestAttendance}
         />
       )}
       {isGalleryOpen && <GalleryModal images={galleryImages} onClose={() => setIsGalleryOpen(false)} />}

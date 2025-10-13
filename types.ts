@@ -54,10 +54,10 @@ export interface PixConfig {
   city: string;
 }
 
-export interface RsvpResponse {
+export interface Guest {
   id: number;
   name: string;
-  attendance: 'yes' | 'no';
+  attendance: 'pending' | 'yes' | 'no';
 }
 
 // Novo tipo para agrupar todos os dados do site
@@ -69,6 +69,5 @@ export interface SiteData {
     galleryImages: GalleryImage[];
     giftList: Gift[];
     pixConfig: PixConfig;
-    rsvpResponses: RsvpResponse[];
-    guestList: string[];
+    guestList: Guest[];
 }

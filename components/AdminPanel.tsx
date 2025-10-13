@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { useSiteData } from '../hooks/useSiteData';
-import type { Gift, PixConfig, HeroData, StoryItem, Person, EventDetails, GalleryImage } from '../types';
+import type { useSiteData } from '../hooks/useSiteData';
+import type { Gift, PixConfig, HeroData, StoryItem, Person, EventDetails, GalleryImage, Guest } from '../types';
 
 type SiteData = ReturnType<typeof useSiteData>;
 
@@ -27,7 +27,7 @@ const uploadImage = async (file: File): Promise<string> => {
 };
 
 
-type AdminTab = 'content' | 'gifts' | 'rsvp' | 'guests';
+type AdminTab = 'content' | 'gifts' | 'guests';
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => {
     const { 
@@ -38,12 +38,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
         galleryImages, setGalleryImages,
         giftList, setGiftList,
         pixConfig, setPixConfig,
-        rsvpResponses,
         guestList, setGuestList,
     } = siteData;
     const [activeTab, setActiveTab] = useState<AdminTab>('content');
     const [uploadingId, setUploadingId] = useState<string | null>(null);
     const [uploadError, setUploadError] = useState<string | null>(null);
+    const [newGuestName, setNewGuestName] = useState('');
 
 
     const handleImageChange = async (
@@ -177,16 +177,30 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
         setPixConfig({ ...pixConfig, [field]: processedValue });
     };
     
-    const rsvpCounts = useMemo(() => {
-        return rsvpResponses.reduce((acc, response) => {
-            if (response.attendance === 'yes') {
-                acc.yes++;
-            } else {
-                acc.no++;
-            }
+    const guestListCounts = useMemo(() => {
+        return (guestList || []).reduce((acc, guest) => {
+            if (guest.attendance === 'yes') acc.yes++;
+            else if (guest.attendance === 'no') acc.no++;
+            else acc.pending++;
             return acc;
-        }, { yes: 0, no: 0 });
-    }, [rsvpResponses]);
+        }, { yes: 0, no: 0, pending: 0 });
+    }, [guestList]);
+
+    const handleAddGuest = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (newGuestName.trim() === '') return;
+        const newGuest: Guest = {
+            id: Date.now(),
+            name: newGuestName.trim(),
+            attendance: 'pending',
+        };
+        setGuestList([...(guestList || []), newGuest]);
+        setNewGuestName('');
+    };
+
+    const handleRemoveGuest = (id: number) => {
+        setGuestList((guestList || []).filter(g => g.id !== id));
+    };
 
   return (
     <div className="fixed inset-0 bg-zinc-900 bg-opacity-95 z-[100] p-4 md:p-8 overflow-y-auto text-white" aria-modal="true" role="dialog">
@@ -199,11 +213,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
         </div>
 
         {/* Tabs */}
-        <div className="mb-8 border-b border-zinc-700 flex items-center gap-4 flex-wrap">
-            <button onClick={() => setActiveTab('content')} className={`font-bebas text-xl py-2 px-4 ${activeTab === 'content' ? 'text-red-500 border-b-2 border-red-500' : 'text-zinc-400'}`}>Conteúdo do Site</button>
+        <div className="mb-8 border-b border-zinc-700 flex items-center gap-4">
+            <button onClick={() => setActiveTab('content')} className={`font-bebas text-xl py-2 px-4 ${activeTab === 'content' ? 'text-red-500 border-b-2 border-red-500' : 'text-zinc-400'}`}>Conteúdo</button>
             <button onClick={() => setActiveTab('gifts')} className={`font-bebas text-xl py-2 px-4 ${activeTab === 'gifts' ? 'text-red-500 border-b-2 border-red-500' : 'text-zinc-400'}`}>Presentes & PIX</button>
-            <button onClick={() => setActiveTab('rsvp')} className={`font-bebas text-xl py-2 px-4 ${activeTab === 'rsvp' ? 'text-red-500 border-b-2 border-red-500' : 'text-zinc-400'}`}>Confirmações</button>
-            <button onClick={() => setActiveTab('guests')} className={`font-bebas text-xl py-2 px-4 ${activeTab === 'guests' ? 'text-red-500 border-b-2 border-red-500' : 'text-zinc-400'}`}>Lista de Convidados</button>
+            <button onClick={() => setActiveTab('guests')} className={`font-bebas text-xl py-2 px-4 ${activeTab === 'guests' ? 'text-red-500 border-b-2 border-red-500' : 'text-zinc-400'}`}>Convidados</button>
         </div>
 
         {uploadError && (
@@ -573,84 +586,79 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
               </>
             )}
             
-            {activeTab === 'rsvp' && (
+            {activeTab === 'guests' && (
               <fieldset className="border border-zinc-700 p-4 rounded-lg">
-                <legend className="px-2 font-bebas text-2xl">Confirmações de Presença</legend>
+                <legend className="px-2 font-bebas text-2xl">Lista de Convidados</legend>
                 <div className="space-y-6">
                     {/* Summary */}
-                    <div className="grid grid-cols-2 gap-4 text-center">
+                    <div className="grid grid-cols-3 gap-4 text-center">
                         <div className="bg-green-800/50 p-4 rounded-lg">
-                            <div className="font-bebas text-4xl">{rsvpCounts.yes}</div>
-                            <div className="text-sm uppercase text-green-300">Sim</div>
+                            <div className="font-bebas text-4xl">{guestListCounts.yes}</div>
+                            <div className="text-sm uppercase text-green-300">Virão</div>
                         </div>
                         <div className="bg-red-800/50 p-4 rounded-lg">
-                            <div className="font-bebas text-4xl">{rsvpCounts.no}</div>
-                             <div className="text-sm uppercase text-red-300">Não</div>
+                            <div className="font-bebas text-4xl">{guestListCounts.no}</div>
+                             <div className="text-sm uppercase text-red-300">Não Virão</div>
+                        </div>
+                        <div className="bg-zinc-700/50 p-4 rounded-lg">
+                            <div className="font-bebas text-4xl">{guestListCounts.pending}</div>
+                             <div className="text-sm uppercase text-zinc-400">Pendentes</div>
                         </div>
                     </div>
+
+                    {/* Add Guest Form */}
+                    <form onSubmit={handleAddGuest} className="bg-zinc-800/50 p-4 rounded-lg flex gap-4">
+                        <input
+                            type="text"
+                            value={newGuestName}
+                            onChange={(e) => setNewGuestName(e.target.value)}
+                            placeholder="Nome completo do novo convidado"
+                            className="flex-grow bg-zinc-800 rounded p-2"
+                        />
+                        <button type="submit" className="bg-green-600/80 text-white font-bold py-2 px-4 rounded hover:bg-green-600 transition-colors">
+                            Adicionar
+                        </button>
+                    </form>
                     
-                    {/* Response List */}
+                    {/* Guest List */}
                     <div className="bg-zinc-800 rounded-lg p-4 max-h-96 overflow-y-auto">
-                        {rsvpResponses.length > 0 ? (
+                        {(guestList || []).length > 0 ? (
                            <table className="w-full text-left">
                                 <thead>
                                     <tr className="border-b border-zinc-700">
                                         <th className="p-2 text-sm font-semibold text-zinc-400">Nome do Convidado</th>
-                                        <th className="p-2 text-sm font-semibold text-zinc-400 text-center">Resposta</th>
+                                        <th className="p-2 text-sm font-semibold text-zinc-400 text-center">Status</th>
+                                        <th className="p-2 text-sm font-semibold text-zinc-400 text-right">Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {rsvpResponses.map(response => (
-                                        <tr key={response.id} className="border-b border-zinc-700/50 last:border-b-0">
-                                            <td className="p-3">{response.name}</td>
+                                    {[...(guestList || [])].sort((a, b) => a.name.localeCompare(b.name)).map(guest => (
+                                        <tr key={guest.id} className="border-b border-zinc-700/50 last:border-b-0">
+                                            <td className="p-3">{guest.name}</td>
                                             <td className="p-3 text-center">
-                                                {response.attendance === 'yes' ? (
-                                                    <span className="bg-green-500/20 text-green-300 text-xs font-bold px-3 py-1 rounded-full">SIM</span>
+                                                {guest.attendance === 'yes' ? (
+                                                    <span className="bg-green-500/20 text-green-300 text-xs font-bold px-3 py-1 rounded-full">CONFIRMADO</span>
+                                                ) : guest.attendance === 'no' ? (
+                                                    <span className="bg-red-500/20 text-red-300 text-xs font-bold px-3 py-1 rounded-full">NÃO VIRÁ</span>
                                                 ) : (
-                                                    <span className="bg-red-500/20 text-red-300 text-xs font-bold px-3 py-1 rounded-full">NÃO</span>
+                                                    <span className="bg-zinc-600/50 text-zinc-300 text-xs font-bold px-3 py-1 rounded-full">PENDENTE</span>
                                                 )}
+                                            </td>
+                                            <td className="p-3 text-right">
+                                                <button 
+                                                    onClick={() => handleRemoveGuest(guest.id)}
+                                                    className="bg-red-900/70 text-red-200 text-xs font-bold py-1 px-3 rounded hover:bg-red-800 transition-colors"
+                                                >
+                                                    Remover
+                                                </button>
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                            </table>
                         ) : (
-                            <p className="text-center text-zinc-500 py-8">Nenhuma confirmação recebida ainda.</p>
+                            <p className="text-center text-zinc-500 py-8">Nenhum convidado na lista ainda.</p>
                         )}
-                    </div>
-                </div>
-              </fieldset>
-            )}
-
-            {activeTab === 'guests' && (
-              <fieldset className="border border-zinc-700 p-4 rounded-lg">
-                <legend className="px-2 font-bebas text-2xl">Lista de Convidados</legend>
-                <div className="space-y-4">
-                    <p className="text-sm text-zinc-400">
-                        Ative a lista de convidados para permitir que apenas as pessoas listadas confirmem presença (RSVP). 
-                        Se a lista estiver vazia, qualquer pessoa poderá confirmar.
-                    </p>
-                    <div>
-                        <label htmlFor="guestList" className="block text-sm font-medium text-zinc-400 mb-2">
-                            Cole os nomes dos convidados abaixo (um nome por linha):
-                        </label>
-                        <textarea
-                            id="guestList"
-                            rows={15}
-                            className="w-full bg-zinc-800 border-zinc-700 text-white rounded-md p-3 focus:ring-red-500 focus:border-red-500 font-mono text-sm"
-                            placeholder={"Nome Sobrenome 1\nNome Sobrenome 2\nNome Sobrenome 3"}
-                            value={(guestList || []).join('\n')}
-                            onChange={(e) => {
-                                const guests = e.target.value
-                                    .split('\n')
-                                    .map(name => name.trim())
-                                    .filter(Boolean); // Remove empty lines
-                                setGuestList(guests);
-                            }}
-                        />
-                    </div>
-                    <div className="bg-zinc-800/50 p-3 rounded-lg text-center">
-                        <p className="font-bold text-lg">Total de Convidados na Lista: <span className="text-red-500 font-bebas text-2xl">{(guestList || []).length}</span></p>
                     </div>
                 </div>
               </fieldset>

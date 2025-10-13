@@ -50,6 +50,12 @@ export const DEFAULT_SITE_DATA: SiteData = {
       recipientName: 'Yasmin',
       city: 'SAO PAULO',
   },
-  rsvpResponses: [],
-  guestList: [],
+  guestList: [
+    { id: 1, name: 'João Silva', attendance: 'pending' },
+    { id: 2, name: 'Maria Santos', attendance: 'pending' },
+    { id: 3, name: 'Pedro Souza', attendance: 'pending' },
+    { id: 4, name: 'João Ferreira', attendance: 'pending' },
+    { id: 5, name: 'Ana Oliveira', attendance: 'yes' },
+    { id: 6, name: 'Carlos Pereira', attendance: 'no' },
+  ],
 };
