@@ -4,6 +4,36 @@ import type { SiteData, Guest } from '../types';
 
 const SITE_DATA_KEY = 'siteData';
 
+// Função de sanitização robusta para garantir que a lista de convidados esteja sempre no formato correto.
+const sanitizeGuestList = (rawGuestList: any): Guest[] => {
+    if (!Array.isArray(rawGuestList)) {
+        return [];
+    }
+    
+    return rawGuestList
+        .map((guest: any, index: number): Guest | null => {
+            // Se o 'guest' for um objeto válido com 'name'
+            if (typeof guest === 'object' && guest !== null && typeof guest.name === 'string' && guest.name.trim()) {
+                return {
+                    id: typeof guest.id === 'number' ? guest.id : Date.now() + index,
+                    name: guest.name.trim(),
+                    attendance: ['yes', 'no', 'pending'].includes(guest.attendance) ? guest.attendance : 'pending',
+                };
+            }
+            // Se for uma string (de uma versão muito antiga), converte para objeto
+            if (typeof guest === 'string' && guest.trim()) {
+                return {
+                    id: Date.now() + index,
+                    name: guest.trim(),
+                    attendance: 'pending',
+                };
+            }
+            // Ignora entradas inválidas
+            return null;
+        })
+        .filter((g): g is Guest => g !== null);
+};
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!process.env.KV_URL || !process.env.KV_REST_API_TOKEN) {
         return res.status(500).json({ 
@@ -25,21 +55,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 return res.status(404).json({ error: 'Site data not found. Cannot update RSVP.' });
             }
             
-            // Verificação de robustez: Garante que a lista de convidados existe e é um array.
-            if (!Array.isArray(currentData.guestList)) {
-                return res.status(404).json({ error: 'Guest list is missing or invalid. Cannot find the specified guest.' });
-            }
+            // Limpa a lista de convidados lida do banco de dados ANTES de usá-la.
+            const sanitizedGuestList = sanitizeGuestList(currentData.guestList);
             
-            // Procura o convidado de forma segura, verificando se cada item é um objeto válido
-            const guestIndex = currentData.guestList.findIndex(g => g && typeof g.id !== 'undefined' && g.id === guestId);
+            const guestIndex = sanitizedGuestList.findIndex(g => g.id === guestId);
 
             if (guestIndex === -1) {
                 return res.status(404).json({ error: 'Guest not found.' });
             }
 
-            currentData.guestList[guestIndex].attendance = attendance;
+            // Atualiza a lista já limpa
+            sanitizedGuestList[guestIndex].attendance = attendance;
+            
+            // Cria a versão final dos dados com a lista de convidados corrigida
+            const updatedData = { ...currentData, guestList: sanitizedGuestList };
 
-            await kv.set(SITE_DATA_KEY, currentData);
+            // Salva os dados atualizados e corrigidos de volta no banco
+            await kv.set(SITE_DATA_KEY, updatedData);
 
             return res.status(200).json({ message: 'RSVP updated successfully.' });
 
