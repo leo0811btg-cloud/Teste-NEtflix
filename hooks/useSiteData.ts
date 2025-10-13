@@ -34,6 +34,30 @@ export const useSiteData = () => {
             } else {
                 const fetchedData: SiteData | null = await response.json();
                 if (fetchedData) {
+                    // Sanitização da lista de convidados para garantir a integridade de cada item
+                    const sanitizedGuestList = (Array.isArray(fetchedData.guestList) ? fetchedData.guestList : [])
+                        .map((guest: any, index: number): Guest | null => {
+                            // Se o 'guest' for um objeto válido com 'name'
+                            if (typeof guest === 'object' && guest !== null && typeof guest.name === 'string' && guest.name.trim()) {
+                                return {
+                                    id: typeof guest.id === 'number' ? guest.id : Date.now() + index,
+                                    name: guest.name.trim(),
+                                    attendance: ['yes', 'no', 'pending'].includes(guest.attendance) ? guest.attendance : 'pending',
+                                };
+                            }
+                            // Se for uma string (de uma versão muito antiga), converte para objeto
+                            if (typeof guest === 'string' && guest.trim()) {
+                                return {
+                                    id: Date.now() + index,
+                                    name: guest.trim(),
+                                    attendance: 'pending',
+                                };
+                            }
+                            // Ignora entradas inválidas
+                            return null;
+                        })
+                        .filter((g): g is Guest => g !== null);
+
                     // Merge robusto para garantir a integridade dos dados, especialmente após atualizações
                     const mergedData: SiteData = {
                         heroData: { ...DEFAULT_SITE_DATA.heroData, ...fetchedData.heroData },
@@ -43,7 +67,8 @@ export const useSiteData = () => {
                         galleryImages: Array.isArray(fetchedData.galleryImages) ? fetchedData.galleryImages : DEFAULT_SITE_DATA.galleryImages,
                         giftList: Array.isArray(fetchedData.giftList) ? fetchedData.giftList : DEFAULT_SITE_DATA.giftList,
                         pixConfig: { ...DEFAULT_SITE_DATA.pixConfig, ...fetchedData.pixConfig },
-                        guestList: Array.isArray(fetchedData.guestList) ? fetchedData.guestList : DEFAULT_SITE_DATA.guestList,
+                        // Usa a lista sanitizada se a original era um array, senão usa o padrão.
+                        guestList: Array.isArray(fetchedData.guestList) ? sanitizedGuestList : DEFAULT_SITE_DATA.guestList,
                     };
                     setData(mergedData);
                 } else {
