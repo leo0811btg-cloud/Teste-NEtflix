@@ -44,7 +44,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
     const [uploadingId, setUploadingId] = useState<string | null>(null);
     const [uploadError, setUploadError] = useState<string | null>(null);
     const [newGuestName, setNewGuestName] = useState('');
-
+    const [csvFile, setCsvFile] = useState<File | null>(null);
+    const [isImporting, setIsImporting] = useState(false);
+    const [importMessage, setImportMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
     const handleImageChange = async (
         file: File | null,
@@ -200,6 +202,69 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
 
     const handleRemoveGuest = (id: number) => {
         setGuestList((guestList || []).filter(g => g.id !== id));
+    };
+
+    const handleCsvFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            setCsvFile(file);
+            setImportMessage(null);
+        } else {
+            setCsvFile(null);
+        }
+    };
+
+    const handleImportGuests = () => {
+        if (!csvFile) return;
+
+        setIsImporting(true);
+        setImportMessage(null);
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const text = e.target?.result as string;
+                if (!text) {
+                    throw new Error("O arquivo está vazio ou não pôde ser lido.");
+                }
+                
+                const lines = text.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
+
+                if (lines.length === 0) {
+                    throw new Error("Nenhum nome válido encontrado no arquivo.");
+                }
+
+                const currentGuestNames = new Set((guestList || []).map(g => g.name.toLowerCase()));
+                
+                const newGuests: Guest[] = lines
+                    .filter(name => !currentGuestNames.has(name.toLowerCase()))
+                    .map((name, index) => ({
+                        id: Date.now() + index,
+                        name: name,
+                        attendance: 'pending',
+                    }));
+
+                if (newGuests.length === 0) {
+                    setImportMessage({ type: 'error', text: 'Todos os convidados do arquivo já estão na lista.' });
+                } else {
+                    setGuestList([...(guestList || []), ...newGuests]);
+                    setImportMessage({ type: 'success', text: `${newGuests.length} novo(s) convidado(s) adicionado(s) com sucesso!` });
+                }
+            } catch (error) {
+                setImportMessage({ type: 'error', text: error instanceof Error ? error.message : 'Erro ao processar o arquivo.' });
+            } finally {
+                setIsImporting(false);
+                setCsvFile(null);
+                const fileInput = document.getElementById('csv-importer') as HTMLInputElement;
+                if (fileInput) fileInput.value = '';
+            }
+        };
+        reader.onerror = () => {
+            setImportMessage({ type: 'error', text: 'Não foi possível ler o arquivo.' });
+            setIsImporting(false);
+            setCsvFile(null);
+        };
+        reader.readAsText(csvFile);
     };
 
   return (
@@ -606,18 +671,53 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ siteData, onClose }) => 
                         </div>
                     </div>
 
+                    {/* Import from CSV */}
+                    <div className="bg-zinc-800/50 p-4 rounded-lg space-y-3">
+                        <h4 className="font-bold text-lg text-white">Importar Lista de Convidados</h4>
+                        <p className="text-sm text-zinc-400">
+                            Adicione vários convidados de uma vez enviando um arquivo <strong>.csv</strong> ou <strong>.txt</strong>.
+                        </p>
+                        <p className="text-xs text-zinc-500">
+                            <strong>Formato:</strong> O arquivo deve conter apenas os nomes completos, um nome por linha, sem cabeçalho.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center pt-2">
+                            <input
+                                id="csv-importer"
+                                type="file"
+                                accept=".csv,.txt,text/csv,text/plain"
+                                onChange={handleCsvFileChange}
+                                className="w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-zinc-700 file:text-zinc-300 hover:file:bg-zinc-600 cursor-pointer"
+                            />
+                            <button
+                                onClick={handleImportGuests}
+                                disabled={!csvFile || isImporting}
+                                className="w-full sm:w-auto bg-red-600 text-white font-bold py-2 px-6 rounded hover:bg-red-700 transition-colors disabled:bg-zinc-600 disabled:cursor-not-allowed flex-shrink-0"
+                            >
+                                {isImporting ? 'Importando...' : 'Importar'}
+                            </button>
+                        </div>
+                        {importMessage && (
+                            <p className={`text-sm mt-2 font-medium text-center ${importMessage.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+                                {importMessage.text}
+                            </p>
+                        )}
+                    </div>
+
                     {/* Add Guest Form */}
-                    <form onSubmit={handleAddGuest} className="bg-zinc-800/50 p-4 rounded-lg flex gap-4">
-                        <input
-                            type="text"
-                            value={newGuestName}
-                            onChange={(e) => setNewGuestName(e.target.value)}
-                            placeholder="Nome completo do novo convidado"
-                            className="flex-grow bg-zinc-800 rounded p-2"
-                        />
-                        <button type="submit" className="bg-green-600/80 text-white font-bold py-2 px-4 rounded hover:bg-green-600 transition-colors">
-                            Adicionar
-                        </button>
+                    <form onSubmit={handleAddGuest} className="bg-zinc-800/50 p-4 rounded-lg">
+                        <h4 className="font-bold text-lg text-white mb-2">Adicionar Convidado Manualmente</h4>
+                        <div className="flex gap-4">
+                          <input
+                              type="text"
+                              value={newGuestName}
+                              onChange={(e) => setNewGuestName(e.target.value)}
+                              placeholder="Nome completo do novo convidado"
+                              className="flex-grow bg-zinc-800 rounded p-2"
+                          />
+                          <button type="submit" className="bg-green-600/80 text-white font-bold py-2 px-4 rounded hover:bg-green-600 transition-colors">
+                              Adicionar
+                          </button>
+                        </div>
                     </form>
                     
                     {/* Guest List */}
