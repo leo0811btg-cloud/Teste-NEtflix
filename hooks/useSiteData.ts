@@ -34,8 +34,17 @@ export const useSiteData = () => {
             } else {
                 const fetchedData: SiteData | null = await response.json();
                 if (fetchedData) {
-                    // Garante que todos os campos existam, mesmo que os dados salvos sejam de uma versão antiga
-                    const mergedData = { ...DEFAULT_SITE_DATA, ...fetchedData };
+                    // Merge robusto para garantir a integridade dos dados, especialmente após atualizações
+                    const mergedData: SiteData = {
+                        heroData: { ...DEFAULT_SITE_DATA.heroData, ...fetchedData.heroData },
+                        ourStory: Array.isArray(fetchedData.ourStory) ? fetchedData.ourStory : DEFAULT_SITE_DATA.ourStory,
+                        weddingParty: Array.isArray(fetchedData.weddingParty) ? fetchedData.weddingParty : DEFAULT_SITE_DATA.weddingParty,
+                        eventDetails: Array.isArray(fetchedData.eventDetails) ? fetchedData.eventDetails : DEFAULT_SITE_DATA.eventDetails,
+                        galleryImages: Array.isArray(fetchedData.galleryImages) ? fetchedData.galleryImages : DEFAULT_SITE_DATA.galleryImages,
+                        giftList: Array.isArray(fetchedData.giftList) ? fetchedData.giftList : DEFAULT_SITE_DATA.giftList,
+                        pixConfig: { ...DEFAULT_SITE_DATA.pixConfig, ...fetchedData.pixConfig },
+                        guestList: Array.isArray(fetchedData.guestList) ? fetchedData.guestList : DEFAULT_SITE_DATA.guestList,
+                    };
                     setData(mergedData);
                 } else {
                     // Se o banco retornar null, trata como "não encontrado"

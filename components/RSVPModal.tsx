@@ -27,7 +27,7 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, guestList, update
     setError('');
 
     const normalizedFirstName = firstName.trim().toLowerCase();
-    const matches = guestList.filter(guest => 
+    const matches = (guestList || []).filter(guest => 
         guest.name.toLowerCase().split(' ')[0] === normalizedFirstName
     );
 
