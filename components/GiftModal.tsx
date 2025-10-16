@@ -61,7 +61,10 @@ export const GiftModal: React.FC<GiftModalProps> = ({ gift, pixConfig, onClose }
 
     useEffect(() => {
         if (gift && pixConfig.key) {
-            const txid = `CASAMENTO${gift.id}${Date.now().toString().slice(-5)}`;
+            // Padroniza o TXID para '***', que é a prática recomendada para QR Codes estáticos
+            // onde um ID de transação único não é necessário para a reconciliação do recebedor.
+            // Isso resolve o problema de IDs inválidos para novos presentes.
+            const txid = '***';
             const payload = generatePixPayload(
                 pixConfig.key,
                 pixConfig.recipientName,
